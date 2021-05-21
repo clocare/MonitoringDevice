@@ -29,7 +29,7 @@ void TFT_voidInit(void)
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 1);
     TIMER_voidSetBusyWait(TIM3 ,100);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 0);
-    TIMER_voidSetBusyWait(TIM3 ,2);
+    TIMER_voidSetBusyWait(TIM3 ,200);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 1);
     TIMER_voidSetBusyWait(TIM3 ,100);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 0);

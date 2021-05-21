@@ -17,7 +17,7 @@
 	Number of timer in the MCU 
 */
 
-#define   TIMER_NUMBER   4
+#define   TIMER_NUMBER   3
 
 
 /******************* Private data for the config.c ******************/
