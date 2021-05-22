@@ -22,7 +22,7 @@
 // #define GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_HIGH);	GPIO_SetBits(GPIOA, GPIO_Pin_4);
 #undef mfrc522_DumpToSerial
 /* Private variables ---------------------------------------------------------*/
-
+static Uid uid;
 /* Private function prototypes -----------------------------------------------*/
 uint8 MIFARE_TwoStepHelper(uint8 command, uint8 blockAddr,	long data);
 void PCD_Init_IO(void);
@@ -1352,7 +1352,6 @@ boolean PICC_IsNewCardPresent()
 	return (result == mfrc522_STATUS_OK || result == mfrc522_STATUS_COLLISION);
 } // End PICC_IsNewCardPresent()
 
-#ifdef mfrc522_DumpToSerial
 /**
  * Simple wrapper around PICC_Select.
  * Returns TRUE if a UID could be read.
@@ -1365,7 +1364,6 @@ boolean PICC_ReadCardSerial() {
 	uint8 result = PICC_Select(&uid, 0);
 	return (result == mfrc522_STATUS_OK);//return a '1' if PICC_Select returns a '1', else a '0'
 } // End PICC_ReadCardSerial()
-#endif
 
 int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key , Uid * uid)
 {
@@ -1437,4 +1435,9 @@ int PICC_ReadBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key , Uid 
   }
   //printf("block was read\r\n");
   return status;
+}
+
+Uid PCD_getUid(void)
+{
+	return uid; 
 }

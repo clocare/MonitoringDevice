@@ -319,7 +319,7 @@ void PICC_DumpMifareClassicToSerial(Uid *uid, uint8 piccType, MIFARE_Key *key);
 void PICC_DumpMifareClassicSectorToSerial(Uid *uid, MIFARE_Key *key, uint8 sector);
 void PICC_DumpMifareUltralightToSerial(void);
 void MIFARE_SetAccessBits(uint8 *accessBitBuffer, uint8 g0, uint8 g1, uint8 g2, uint8 g3);
-
+Uid PCD_getUid(void);
 /////////////////////////////////////////////////////////////////////////////////////
 // Convenience functions - does not add extra functionality
 /////////////////////////////////////////////////////////////////////////////////////

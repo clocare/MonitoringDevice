@@ -1,6 +1,11 @@
+// 1- include Libraries 
+#include "STD_TYPES.h"
+#include "BIT_MATH.h"
 
+// 2- include interface file of needed lower layers
 #include "TFT_interface.h"
 
+// 3- include interface files
 #include "Display.h"
 
 /************************************************************************/
@@ -27,7 +32,7 @@ static void Display_NoCard(void);
 static void Display_Readings(void);
 static void AppendIntegerToString(uint8 * string, uint16 integer);
 static void AppendChar(uint8 * string, uint8 charToAppend);
-
+static void AppendString(uint8 * string, uint8 * stringToAppend);
 /************************************************************************/
 /*                         APIS definitions                             */
 /************************************************************************/
@@ -96,21 +101,41 @@ static void Display_Readings(void)
 	uint8 SPO2Sensor[80]= "SPO2: ";
 	uint8 HeartRateSensor[80]= "HeartRate: ";
 	
-	AppendIntegerToString(tempSensor , ObserverReadings.Temp);
-	AppendChar(tempSensor , 'C');
-	AppendIntegerToString(SPO2Sensor , ObserverReadings.SPO2);
-	AppendChar(SPO2Sensor , '%');
-	AppendIntegerToString(HeartRateSensor , ObserverReadings.HeartRate);
-	AppendChar(HeartRateSensor , 'b');
-	AppendChar(HeartRateSensor , 'p');
-	AppendChar(HeartRateSensor , 'm');
+	if ( ObserverReadings.Temp > 20 && ObserverReadings.Temp < 60 )
+	{
+		AppendIntegerToString(tempSensor , ObserverReadings.Temp);
+		AppendString(tempSensor , " C");
+	}
+	else 
+	{
+		AppendString(tempSensor , " NAN");
+	}
+	
+	if (ObserverReadings.SPO2 > 60 && ObserverReadings.SPO2 < 105)
+	{
+		AppendIntegerToString(SPO2Sensor , ObserverReadings.SPO2);
+		AppendChar(SPO2Sensor , '%');
+	}
+	else 
+	{
+		AppendString(SPO2Sensor , " NAN");
+	}
+	
+	if (ObserverReadings.HeartRate > 30 && ObserverReadings.HeartRate < 200)
+	{
+		AppendIntegerToString(HeartRateSensor , ObserverReadings.HeartRate);
+		AppendString(HeartRateSensor , " bpm");
+	}
+	else 
+	{
+		AppendString(HeartRateSensor , " NAN");
+	}
 	
 	TFT_voidPrintText(10  , 60 , CardPresent , TEXT_COLOR , BACKGROUND_COLOR);
 	TFT_voidPrintText(10  , 70 , tempSensor , TEXT_COLOR , BACKGROUND_COLOR);
 	TFT_voidPrintText(10  , 80 , SPO2Sensor , TEXT_COLOR , BACKGROUND_COLOR);	
 	TFT_voidPrintText(10  , 90 , HeartRateSensor , TEXT_COLOR , BACKGROUND_COLOR);
 	
-
 }
 	
 
@@ -150,5 +175,16 @@ static void AppendChar(uint8 * string, uint8 charToAppend)
 	*string--;
 	*string++ = charToAppend;
 	*string = '\0';
+	return ; 
+}
+
+static void AppendString(uint8 * string, uint8 * stringToAppend)
+{
+	while (*(stringToAppend) != '\0')
+	{
+		AppendChar(string , *stringToAppend);
+		stringToAppend++;
+	}	
+	return ; 
 }
 
