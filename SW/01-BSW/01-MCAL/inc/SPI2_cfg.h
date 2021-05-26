@@ -20,7 +20,7 @@
 */
 #define SPI_CLK_POL_HIGH				1U
 #define SPI_CLK_POL_LOW					0U
-#define SPI2_CLK_POL         		SPI_CLK_POL_LOW
+#define SPI2_CLK_POL         		SPI_CLK_POL_HIGH
 
 /*
     First data Transition in first clock  = 0
@@ -28,7 +28,7 @@
 */
 #define SPI_CLK_PHA_HIGH				 1U
 #define SPI_CLK_PHA_LOW					 0U
-#define SPI2_CLK_PHASE       		 SPI_CLK_PHA_LOW
+#define SPI2_CLK_PHASE       		 SPI_CLK_PHA_HIGH
 
 /* LSB FIRST = 1 
    MSB FIRST = 0
@@ -58,12 +58,8 @@
     #define SPIBAUD_RATE_CLK_DIV128         6
     #define SPIBAUD_RATE_CLK_DIV256         7
 
-    #define SPI2_BAUD_RATE_SET               SPIBAUD_RATE_CLK_DIV8
+    #define SPI2_BAUD_RATE_SET               SPIBAUD_RATE_CLK_DIV2
 #endif
 
-/* Only SW implementation of Chip Select pin is allowed here */
-/* Define CS_PN number as in DIO Driver */
-#define PORT_B_PIN_12					28U
-#define SPI2_CS_PIN						PORT_B_PIN_12
 
 #endif // End Of File

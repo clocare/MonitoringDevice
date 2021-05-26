@@ -35,6 +35,17 @@
 #define GPIOC_BRR           *((volatile uint32 *) 0x40011014)
 #define GPIOC_LCKR          *((volatile uint32 *) 0x40011018)
 
+/*********************** AF **********************/
+
+#define AFIO_BASE_ADDRESS       0x40010000
+#define AFIO                    ((t_AFIO *) AFIO_BASE_ADDRESS)
+typedef struct 
+{
+   volatile uint32 EVCR;
+   volatile uint32 MAPR;
+   volatile uint32 EXTICR[4];
+
+}t_AFIO;
 
 /************************* SPI *************************/
 

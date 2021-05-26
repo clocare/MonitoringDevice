@@ -30,7 +30,6 @@ typedef uint8 CS_PIN_Type;
 /************************************************************************/
 /*                          Local functions                             */
 /************************************************************************/
-static void Dio_WriteChannel(CS_PIN_Type ChannelId, Std_ReturnType Level);
 
 /************************************************************************/
 /*                         Global variables                             */
@@ -123,71 +122,4 @@ void SPI2_voidStop(void)
     // Clear SPE
     CLR_BIT(SPI2_CR1 , SPI_CR1_SPE ); 
 	return ; 
-}
-	
-
-/************************************************************************/
-/*                          Local functions                             */
-/************************************************************************/
-static void Dio_WriteChannel(CS_PIN_Type ChannelId, Std_ReturnType Level)
-{
-
-    if (ChannelId >= PORTA_CHANNEL_OFFEST && ChannelId < PORTx_CHANNEL_OFFSET)
-    {
-        // OK proceed
-        /* 
-        * USE BSRR and BRR registers to provide atomic channel access 
-        */
-        if (ChannelId >= PORTA_CHANNEL_OFFEST &&
-            ChannelId < PORTB_CHANNEL_OFFEST)
-        {
-            switch (Level)
-            {
-            case STD_HIGH:
-                SET_BIT(GPIOA_BSRR, ChannelId); // Set Channel
-                break;
-            case STD_LOW:
-                SET_BIT(GPIOA_BRR, ChannelId); // Reset Channel
-                break;
-            default:
-                // shouldn't be here
-                break;
-            }
-        }
-        else if (ChannelId >= PORTB_CHANNEL_OFFEST &&
-                 ChannelId < PORTC_CHANNEL_OFFEST)
-        {
-            ChannelId -= PORTB_CHANNEL_OFFEST;
-            switch (Level)
-            {
-            case STD_HIGH:
-                SET_BIT(GPIOB_BSRR, ChannelId); // Set Channel
-                break;
-            case STD_LOW:
-                SET_BIT(GPIOB_BRR, ChannelId); // Reset Channel
-                break;
-            default:
-                // shouldn't be here
-                break;
-            }
-        }
-        else
-        {
-            ChannelId -= PORTC_CHANNEL_OFFEST;
-            switch (Level)
-            {
-            case STD_HIGH:
-                SET_BIT(GPIOC_BSRR, ChannelId); // Set Channel
-                break;
-            case STD_LOW:
-                SET_BIT(GPIOC_BRR, ChannelId); // Reset Channel
-                break;
-            default:
-                // shouldn't be here
-                break;
-            }
-        }
-    }
-
-return ; 
 }

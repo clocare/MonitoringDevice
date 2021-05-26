@@ -11,7 +11,7 @@
 #include "STD_TYPES.h"
 
 #include "GPIO_interface.h"
-#include "SPI2.h"
+#include "SPI1.h"
 #include "TIMER_interface.h"
 
 #include "mfrc522.h"
@@ -62,8 +62,8 @@ void PCD_WriteRegister(	uint8 reg,		///< The register to write to. One of the PC
 								) {
 		// Select slave
 		GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_LOW);
-		SPI2_u8SendRecieveSync((reg & 0x7E));	// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
-		SPI2_u8SendRecieveSync(value);
+		SPI1_u8SendRecieveSync((reg & 0x7E));	// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
+		SPI1_u8SendRecieveSync(value);
 		// Release slave again
 		GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_HIGH);
 } // End PCD_WriteRegister()
@@ -78,11 +78,11 @@ void PCD_WriteRegisterMulti(	uint8 reg,		///< The register to write to. One of t
 								) {
 	// Select slave
 	GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_LOW);	
-	SPI2_u8SendRecieveSync(reg & 0x7E);				// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
+	SPI1_u8SendRecieveSync(reg & 0x7E);				// MSB == 0 is for writing. LSB is not used in address. Datasheet section 8.1.2.3.
 	for (uint8 index = 0; index < count; index++) {
-		SPI2_u8SendRecieveSync(values[index]);
+		SPI1_u8SendRecieveSync(values[index]);
 	}
-	GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_HIGH);;		// Release slave again
+	GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_HIGH);	// Release slave again
 } // End PCD_WriteRegister()
 
 /**
@@ -93,10 +93,9 @@ uint8 PCD_ReadRegister(	uint8 reg	///< The register to read from. One of the PCD
 								) {
 	volatile uint8 value;
 	GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_LOW);			// Select slave
-	value = SPI2_u8SendRecieveSync(0x80 | (reg & 0x7E));			// MSB == 1 is for reading. LSB is not used in address. Datasheet section 8.1.2.3.
-	value = SPI2_u8SendRecieveSync(0);					// Read the value back. Send 0 to stop reading.
+	value = SPI1_u8SendRecieveSync(0x80 | (reg & 0x7E));			// MSB == 1 is for reading. LSB is not used in address. Datasheet section 8.1.2.3.
+	value = SPI1_u8SendRecieveSync(0);					// Read the value back. Send 0 to stop reading.
 	GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_HIGH);			// Release slave again
-	value = SPI2_ReadDR();
 	return (value);
 } // End PCD_ReadRegister()
 
@@ -117,7 +116,7 @@ void PCD_ReadRegisterMulti(	uint8 reg,		///< The register to read from. One of t
 	uint8 index = 0;							// Index in values array.
 	GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_LOW);		// Select slave
 	count--;								// One read is performed outside of the loop
-	SPI2_u8SendRecieveSync(address);					// Tell MFRC522 which address we want to read
+	SPI1_u8SendRecieveSync(address);					// Tell MFRC522 which address we want to read
 	while (index < count) {
 		if (index == 0 && rxAlign) { // Only update bit positions rxAlign..7 in values[0]
 			// Create bit mask for bit positions rxAlign..7
@@ -126,16 +125,16 @@ void PCD_ReadRegisterMulti(	uint8 reg,		///< The register to read from. One of t
 				mask |= (1 << i);
 			}
 			// Read value and tell that we want to read the same address again.
-			uint16 value = SPI2_u8SendRecieveSync(address);
+			uint16 value = SPI1_u8SendRecieveSync(address);
 			// Apply mask to both current value of values[0] and the new data in value.
 			values[0] = (values[index] & ~mask) | (value & mask);
 		}
 		else { // Normal case
-			values[index] = (SPI2_u8SendRecieveSync(address)) & 0xFF;	// Read value and tell that we want to read the same address again.
+			values[index] = (SPI1_u8SendRecieveSync(address)) & 0xFF;	// Read value and tell that we want to read the same address again.
 		}
 		index++;
 	}
-	values[index] = SPI2_u8SendRecieveSync(0) & 0xFF;			// Read the final uint8. Send 0 to stop reading.
+	values[index] = SPI1_u8SendRecieveSync(0) & 0xFF;			// Read the final uint8. Send 0 to stop reading.
 	GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_HIGH);			// Release slave again
 } // End PCD_ReadRegister()
 

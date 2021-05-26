@@ -12,7 +12,7 @@
 // 2- include interface file of needed lower layers
 #include "GPIO_interface.h"
 #include "TIMER_interface.h"
-#include "SPI1.h"
+#include "SPI2.h"
 
 // 3- include driver files
 #include "TFT_interface.h"
@@ -29,7 +29,7 @@ void TFT_voidInit(void)
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 1);
     TIMER_voidSetBusyWait(TIM3 ,100);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 0);
-    TIMER_voidSetBusyWait(TIM3 ,200);
+    TIMER_voidSetBusyWait(TIM3 ,20);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 1);
     TIMER_voidSetBusyWait(TIM3 ,100);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 0);
@@ -115,7 +115,7 @@ static void TFT_voidWriteCommand(uint8 cpy_Command){
     // CS low
     GPIO_voidSetPortPinValue (TFT_CS_PORT , TFT_CS_PIN , 0);
     // Send Command
-    (void)SPI1_u8SendRecieveSync(cpy_Command);
+    (void)SPI2_u8SendRecieveSync(cpy_Command);
     // CS HIGH
     GPIO_voidSetPortPinValue (TFT_CS_PORT , TFT_CS_PIN , 1);
 
@@ -127,7 +127,7 @@ static void TFT_voidWriteData(uint8 cpy_Data){
     // CS low
     GPIO_voidSetPortPinValue (TFT_CS_PORT , TFT_CS_PIN , 0);
     // Send data 
-    (void)SPI1_u8SendRecieveSync(cpy_Data);
+    (void)SPI2_u8SendRecieveSync(cpy_Data);
     // CS HIGH
     GPIO_voidSetPortPinValue (TFT_CS_PORT , TFT_CS_PIN , 1);
 }

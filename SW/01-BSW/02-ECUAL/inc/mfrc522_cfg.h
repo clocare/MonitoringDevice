@@ -13,7 +13,7 @@
 #define mfrc522_PORTB			0x01
 #define mfrc522_PORTC			0x02
 
-#define mfrc522_CS_PORT		mfrc522_PORTB
-#define mfrc522_CS_PIN		12U
+#define mfrc522_CS_PORT		mfrc522_PORTA
+#define mfrc522_CS_PIN		4U
 
 #endif
