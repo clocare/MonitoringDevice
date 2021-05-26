@@ -7,6 +7,7 @@
 
 // 3- include interface files
 #include "Display.h"
+#include "Observer.h"
 
 /************************************************************************/
 /*                         Global constants                             */
@@ -16,13 +17,7 @@
 /************************************************************************/
 /*                         Global variables                             */
 /************************************************************************/
-typedef struct ObserverReadingsType
-{
-	uint8 Temp;
-	uint8 HeartRate;
-	uint8 SPO2; 
-	uint8 dummy; 
-}ObserverReadingsType;
+
 static struct ObserverReadingsType ObserverReadings = {0};
 
 /************************************************************************/

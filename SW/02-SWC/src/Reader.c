@@ -1,6 +1,4 @@
 
-#include "STD_TYPES.h"
-#include "BIT_MATH.h"
 // 1- include Libraries 
 #include "STD_TYPES.h"
 #include "BIT_MATH.h"
@@ -10,6 +8,7 @@
 
 // 3- include interface files
 #include "Reader.h"
+#include "Observer.h"
 
 MIFARE_Key key;
 

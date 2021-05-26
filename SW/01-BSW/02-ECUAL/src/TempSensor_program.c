@@ -22,8 +22,8 @@ void TempSensor_voidInit(void)
 	/* initializing ADC1 */
 	ADC1_voidInit();
 		
-	/* configuring sensor's pin */
-	GPIO_voidInitPortPinDirection( TEMP_SENSOR_PORT , TEMP_SENSOR_PIN, INPUT_TYPE);
+	/* configuring sensor's pin */	
+	// Handled in main
 }
 
 float32 TempSensor_f32TempRead(void)
