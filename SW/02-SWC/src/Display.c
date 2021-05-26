@@ -47,7 +47,7 @@ static void AppendString(uint8 * string, uint8 * stringToAppend);
 void Display_init(void)
 {
 	TFT_voidInit();
-	Display_NoCard();
+  Display_NoCard();
 	return ; 
 }
 

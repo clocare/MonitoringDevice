@@ -326,6 +326,6 @@ Uid PCD_getUid(void);
 boolean PICC_IsNewCardPresent(void);
 boolean PICC_ReadCardSerial(void);
 
-int PICC_ReadBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key , Uid * uid);
-int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key, Uid * uid);
+int PICC_ReadBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key );
+int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key);
 #endif /* LIB_MFRC522_H_ */

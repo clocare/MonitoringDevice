@@ -1364,7 +1364,7 @@ boolean PICC_ReadCardSerial() {
 	return (result == mfrc522_STATUS_OK);//return a '1' if PICC_Select returns a '1', else a '0'
 } // End PICC_ReadCardSerial()
 
-int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key , Uid * uid)
+int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key )
 {
   //this makes sure that we only write into data blocks. Every 4th block is a trailer block for the access/security info.
   int largestModulo4Number=blockNumber/4*4;
@@ -1376,7 +1376,7 @@ int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key , Uid
   //printf("%d is a data block:", blockNumber);
 
   /*****************************************authentication of the desired block for access***********************************************************/
-  uint8 status = PCD_Authenticate(PICC_CMD_MF_AUTH_KEY_A, trailerBlock, key, (uid));
+  uint8 status = PCD_Authenticate(PICC_CMD_MF_AUTH_KEY_A, trailerBlock, key , &uid);
   //uint8 PCD_Authenticate(uint8 command, uint8 blockAddr, MIFARE_Key *key, Uid *uid);
   //this method is used to authenticate a certain block for writing or reading
   //command: See enumerations above -> PICC_CMD_MF_AUTH_KEY_A	= 0x60 (=1100000),		// this command performs authentication with Key A
@@ -1403,13 +1403,13 @@ int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key , Uid
 }
 
 
-int PICC_ReadBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key , Uid * uid)
+int PICC_ReadBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key )
 {
   int largestModulo4Number=blockNumber/4*4;
   int trailerBlock=largestModulo4Number+3;//determine trailer block for the sector
 
   /*****************************************authentication of the desired block for access***********************************************************/
-  uint8 status = PCD_Authenticate(PICC_CMD_MF_AUTH_KEY_A, trailerBlock, key, (uid));
+  uint8 status = PCD_Authenticate(PICC_CMD_MF_AUTH_KEY_A, trailerBlock, key, &(uid));
   //uint8 PCD_Authenticate(uint8 command, uint8 blockAddr, MIFARE_Key *key, Uid *uid);
   //this method is used to authenticate a certain block for writing or reading
   //command: See enumerations above -> PICC_CMD_MF_AUTH_KEY_A	= 0x60 (=1100000),		// this command performs authentication with Key A

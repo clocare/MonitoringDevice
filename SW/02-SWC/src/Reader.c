@@ -87,17 +87,18 @@ boolean Reader_SetId(nationalID_Type Id)
  ******************************************/
 nationalID_Type Reader_GetId (void)
 {
-	volatile nationalID_Type * ID ; 
+	nationalID_Type ID ;
 	volatile nationalID_Type ret_ID = {0};
 	uint8 i = 0 ;
 	if (Reader_AuthCard(ID_BLOCK) == TRUE)
 	{
-		if (Reader_ReadID(ID) == TRUE)
+		if (Reader_ReadID(&ID) == TRUE)
 		{
-			for (i=0 ; i < ID_LEN ; i++)
-				ret_ID.id[i] = ID->id[i]; 
+			for (i=0 ; i < ID_READ_LEN ; i++)
+				ret_ID.id2[i] = ID.id2[i]; 
 		}
 	}
+	__asm("NOP");
 	return ret_ID; 
 }
 
@@ -131,7 +132,7 @@ static boolean Reader_AuthCard(uint8 block)
 static boolean Reader_WriteID (nationalID_Type ID)
 {
 	boolean ret = FALSE; 
-	if (MIFARE_Write(ID_BLOCK, ID.id , ID_LEN) == mfrc522_STATUS_OK)
+	if (PICC_WriteBlock(ID_BLOCK, ID.id1 , &key) == mfrc522_STATUS_OK)
 	{
 		ret = TRUE;
 	}
@@ -140,8 +141,9 @@ static boolean Reader_WriteID (nationalID_Type ID)
 
 static boolean Reader_ReadID (nationalID_Type * ID)
 {
-	volatile boolean ret = FALSE ; 
-	if (MIFARE_Read(ID_BLOCK, ID->id , ID_LEN) == mfrc522_STATUS_OK)
+	volatile boolean ret = FALSE ;
+	volatile int status = PICC_ReadBlock(ID_BLOCK, ID->id2  , &key ); 
+	if ( status == mfrc522_STATUS_OK)
 	{
 		ret = TRUE; 
 	}

@@ -21,6 +21,7 @@
 #include "NVIC_interface.h"
 #include "UART_interface.h"
 #include "I2C_interface.h"
+#include "ADC1_interface.h"
 
 /* ECUAL Drivers */
 #include "TFT_interface.h"
@@ -49,17 +50,24 @@ int main (void)
   SPI1_voidInit();
 	SPI2_voidInit();
 	UART_voidInit();
-	I2C_voidPeripheralControl(I2C1, I2C_ENABLE);
-	I2C_voidInit(I2C1);
+// 	I2C_voidPeripheralControl(I2C1, I2C_ENABLE);
+//	I2C_voidInit(I2C1);
+//	ADC1_voidInit();
 	
-	MAX30102_voidInit();
+	/* Sensors */
+//	TempSensor_voidInit();
+//	MAX30102_voidInit();
 	
 	/*	Init SWC		*/
 	Display_init();
 	Reader_init();
 	
-	nationalID_Type id = {2 , 9 , 8 , 0 , 1 , 1 , 8 , 1 , 2 , 0 , 1 , 8 , 4 , 5 , 0 , 0};
-	volatile  nationalID_Type id2 ; 
+	uint8 idtest[16] = {3 , 1 , 8 , 0 , 1 , 1 , 8 , 1 , 2 , 0 , 1 , 8 , 4 , 5 , 0 , 0 };
+	volatile nationalID_Type id = {{3 , 1 , 8 , 0 , 1 , 1 , 8 , 1 , 2 , 0 , 1 , 8 , 4 , 5 , 0 , 0 },
+												{0}
+												};
+	boolean flag = TRUE;
+	uint8 i =0 ; 
 	while(1)
 	{
 		
@@ -69,13 +77,23 @@ int main (void)
 			{
 				TFT_voidPrintText(10  , 60 , "   ID IS SET   " , 0xf4c3 , 0);
 
-				id2 = Reader_GetId();
-				if (id2.id[0] == 2 && id2.id[1] == 9){
+				id = Reader_GetId();
+				for (i=0 ; i<12  ; i++)
+				{
+					if  (idtest[i] != id.id2[i])
+					{
+						flag = FALSE; 
+					}
+				}
+				if (flag == TRUE){
 					TFT_voidPrintText(10  , 70 , "   ID Retrieved   " , 0xf4c3 , 0);
+					
+					TFT_voidPrintText(10 , 80 , "31801181201845" , 0xf4c3 , 0);
+			
+					
 				}
 			}
 		}
-		
 	}
 	return 0;
 }
@@ -92,6 +110,7 @@ static void RCC_clkConfig(void)
 	RCC_voidEnableClock(t_APB1, RCC_APB1ENR_SPI2EN);
 	RCC_voidEnableClock(t_APB1, RCC_APB1ENR_TIM3EN);
 	RCC_voidEnableClock(t_APB1, RCC_APB1ENR_I2C1EN);
+	RCC_voidEnableClock(t_APB2, RCC_APB2ENR_ADC1EN );
 	
 	return ; 
 }
@@ -99,29 +118,24 @@ static void RCC_clkConfig(void)
 static void GPIO_config(void)
 {
 	
+	// Allow I/O usage of JTAG pins A15 , B3 , B4
+	// AFIO clk must be enabled first. 
 	SET_BIT(AFIO->MAPR , 25);
-/*
-	GPIO_voidInitPortPinDirection(PORTB, PIN3, OUTPUT_PUSH_PULL_10MHZ);		// RESET PIN
-	GPIO_voidInitPortPinDirection(PORTB, PIN4, OUTPUT_PUSH_PULL_10MHZ);		// Data Command PIN
-	
-	GPIO_voidSetPortPinValue(PORTB, PIN3 , STD_HIGH);											// Turn LED on
-	GPIO_voidSetPortPinValue(PORTB, PIN4 , STD_HIGH);											// Turn LED on
-*/
+
 		/** Init TFT pinsout **/
 	GPIO_voidInitPortPinDirection(PORTB, PIN4, OUTPUT_PUSH_PULL_10MHZ);		// RESET PIN
 	GPIO_voidInitPortPinDirection(PORTB, PIN3, OUTPUT_PUSH_PULL_10MHZ);		// Data Command PIN
 	
 	GPIO_voidInitPortPinDirection(PORTB, PIN12, OUTPUT_PUSH_PULL_10MHZ);	// Chip Select  PIN
-	GPIO_voidInitPortPinDirection(PORTB, PIN13, AF_PUSH_PULL_10MHZ);				// CLK PIN
-//	GPIO_voidInitPortPinDirection(PORTB, PIN14, INPUT_FLOATING);					// MISO PIN
-	GPIO_voidInitPortPinDirection(PORTB, PIN15, AF_PUSH_PULL_10MHZ);				// MOSI PIN
+	GPIO_voidInitPortPinDirection(PORTB, PIN13, AF_PUSH_PULL_10MHZ);			// CLK PIN
+//GPIO_voidInitPortPinDirection(PORTB, PIN14, INPUT_FLOATING);					// MISO PIN
+	GPIO_voidInitPortPinDirection(PORTB, PIN15, AF_PUSH_PULL_10MHZ);			// MOSI PIN
 	GPIO_voidInitPortPinDirection(PORTB, PIN5, OUTPUT_PUSH_PULL_10MHZ);		// LED PIN
 	
 	GPIO_voidSetPortPinValue(PORTB, PIN5 , STD_HIGH);											// Turn LED on
 
 	//	Init mfrc522 GPIO pins
-	// RST O/P PP
-	// SS  O/P PP
+	// RST O/P PP && SS  O/P PP
 	GPIO_voidInitPortPinDirection(PORTA, PIN3 , OUTPUT_PUSH_PULL_10MHZ);	// RESET PIN
 	GPIO_voidInitPortPinDirection(PORTA, PIN4, OUTPUT_PUSH_PULL_10MHZ);		// SS PIN
 	GPIO_voidInitPortPinDirection(PORTA, PIN5, AF_PUSH_PULL_10MHZ);				// CLK PIN
@@ -131,14 +145,11 @@ static void GPIO_config(void)
 	GPIO_voidSetPortPinValue(PORTA, PIN4 , STD_HIGH);
 	GPIO_voidSetPortPinValue(PORTA, PIN3 , STD_HIGH);
 
-
-	// init SPO2 & i2c 
-	/* configuring B6 == SCL & B7 == SDA as AF open drain */
-	GPIO_voidInitPortPinDirection(PORTB, PIN6, AF_OPEN_DRAIN_2MHZ);
-	GPIO_voidInitPortPinDirection(PORTB, PIN7, AF_OPEN_DRAIN_2MHZ);
+	// init SPO2 & I2C 
+	GPIO_voidInitPortPinDirection(PORTB, PIN6, AF_OPEN_DRAIN_2MHZ);			// SCL PIN
+	GPIO_voidInitPortPinDirection(PORTB, PIN7, AF_OPEN_DRAIN_2MHZ);			// SDA PIN
 	
-	
-	
+	// GPIO configuration of Temp sensor is handled within the driver. 
 	
 	return ; 
 }
