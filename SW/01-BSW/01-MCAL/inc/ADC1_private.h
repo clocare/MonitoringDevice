@@ -22,7 +22,6 @@ typedef struct{
 	volatile uint32 DR;
 }ADC_t;
 
-
 #define ADC1 ((ADC_t *) 0x40012400)
 
 
@@ -111,10 +110,12 @@ typedef struct{
 
 /* JSQR */
 #define JSQ1		0		
-#define JSQ1		5		
+#define JSQ2		5
 #define JSQ3		10		
 #define JSQ4		15		
 #define JL			20
+
+/* Private functions prototypes */
 
 
 #endif 

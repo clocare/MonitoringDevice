@@ -45,44 +45,11 @@
 void ADC1_voidInit(void);
 
 /******************************************************************************
-* Description : setting ADC1 threshold of analog watchdog
-* Parameters  : low threshold(uint16), high threshold(uint16)
-* Return type : void
-******************************************************************************/																
-void ADC1_voidSetThresholds(uint16 Copy_u16LowThreshold, uint16 Copy_u16HighThreshold);
-
-/******************************************************************************
 * Description : getting ADC1 conversion val
 * Parameters  : void
-* Return type : low 16 bit of DR register (uint16)
+* Return type : low 16 bit of DR register (u16)
 ******************************************************************************/
 uint16 ADC1_u16GetRegularVal(void);
 
 
-/*
-void ADC1_SetAWDCallBack(void (*CallBack) (void));
-void ADC1_SetEOCCallBack(void (*CallBack) (void));
-
-void (*ADC1_voidAWDCallBack)(void);
-void (*ADC1_voidEOCCallBack)(void);
-*/
-
 #endif 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
