@@ -18,18 +18,28 @@ void Observer_init(void)
 	return ; 
 }
 
-void Observer_GetCurrentReadings(ObserverReadingsType * ObserverReadings)
+uint8 Observer_GetCurrentReadings(ObserverReadingsType * ObserverReadings)
 {
-	
+	uint8 err = 0 ;
 	ObserverReadings->Temp = TempSensor_f32TempRead();
+	
 	ObserverReadings->SPO2 = MAX30102_u8GetSPO2Value();
+	
 	ObserverReadings->HeartRate = MAX30102_u8GetHRValue();
-	return ; 
+	if (ObserverReadings->Temp < TEMP_MIN ||ObserverReadings->Temp > TEMP_MAX )
+	{
+		err++;
+	}
+	if (ObserverReadings->SPO2 < SPO2_MIN ||ObserverReadings->SPO2 > SPO2_MAX )
+	{
+		err++;
+	}
+	if (ObserverReadings->HeartRate < HEARTRATE_MIN ||ObserverReadings->HeartRate > HEARTRATE_MAX )
+	{
+		err++;
+	}
+	return err; 
 }
 
-void Observer_mainTask(void)
-{
-	while (1);
-	return ; 
-}
+
 
