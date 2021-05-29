@@ -101,19 +101,6 @@ nationalID_Type Reader_GetId (void)
 	return ret_ID; 
 }
 
-	/******************************************
- * @name : Reader_MainTask
- * @param:
- * @return:
- * Non Reentrant
- * Sync
- * Main periodic task.
- ******************************************/
-void Reader_MainTask(void)
-{
-	while(1);
-	return ; 
-}
 	
 /************************************************************************/
 /*									Local Functions	definitions													*/

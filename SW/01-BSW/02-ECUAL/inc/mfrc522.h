@@ -276,6 +276,7 @@ uint8 PCD_CalculateCRC(uint8 *data, uint8 length, uint8 *result);
 void PCD_Init(void);
 void PCD_Reset(void);
 void PCD_AntennaOn(void);
+void PCD_AntennaOff(void);
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Functions for communicating with PICCs

@@ -254,6 +254,10 @@ void PCD_AntennaOn(void) {
 	}
 } // End PCD_AntennaOn()
 
+void PCD_AntennaOff() {
+	PCD_ClearRegisterBitMask(TxControlReg, 0x03);
+} // End PCD_AntennaOff()
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Functions for communicating with PICCs
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1395,7 +1399,7 @@ int PICC_WriteBlock(int blockNumber, uint8 arrayAddress[], MIFARE_Key *key )
   status = MIFARE_Write(blockNumber, arrayAddress, 16);//valueBlockA is the block number, MIFARE_Write(block number (0-15), uint8 array containing 16 values, number of bytes in block (=16))
   //status = mfrc522.MIFARE_Write(9, value1Block, 16);
   if (status != mfrc522_STATUS_OK) {
-           printf("MIFARE_Write() failed: %s\r\n", GetStatusCodeName(status));
+    //       printf("MIFARE_Write() failed: %s\r\n", GetStatusCodeName(status));
            return 4;//return "4" as error message
   }
   //printf("block was written\r\n");

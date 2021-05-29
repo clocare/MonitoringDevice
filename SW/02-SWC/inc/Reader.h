@@ -36,6 +36,5 @@ boolean Reader_SetId(nationalID_Type Id);
 
 nationalID_Type Reader_GetId (void);
 
-void Reader_MainTask(void);
 
 #endif
