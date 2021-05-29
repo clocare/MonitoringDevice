@@ -5,12 +5,12 @@
 /* File   : main.c					                            */
 /********************************************************/ 
 
-/* Lib */
+/***************** Lib *****************/
 #include "STD_TYPES.h"
 #include "BIT_MATH.h"
 #include "hw_reg.h"
 
-/* MCAL Drivers */
+/***************** MCAL Drivers *****************/
 #include "ADC1_interface.h"
 #include "GPIO_interface.h"
 #include "I2C_config.h"
@@ -23,20 +23,45 @@
 #include "I2C_interface.h"
 #include "ADC1_interface.h"
 
-/* ECUAL Drivers */
+/***************** ECUAL Drivers *****************/
 #include "TFT_interface.h"
 #include "mfrc522.h"
 #include "TempSensor_interface.h"
 #include "MAX30102_interface.h"
 
-/* Software components */
+/***************** Software components *****************/
 #include "Display.h"
 #include "Reader.h"
+#include "Observer.h"
+#include "App_tasks.h"
 
-/*	Local Functions 	*/
+/***************** Free RTOS files *****************/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+
+/************************************************************************/
+/*										Local Functions 																	*/
+/************************************************************************/
 static void RCC_clkConfig(void);
 static void GPIO_config(void);
 
+/************************************************************************/
+/*                      Global variables                                */
+/************************************************************************/
+
+TaskHandle_t ObserverHandle = NULL_PTR; 
+TaskHandle_t DisplayHandle = NULL_PTR;
+TaskHandle_t ReaderHandle = NULL_PTR;
+TaskHandle_t GateWayHandle = NULL_PTR;
+TaskHandle_t EmergencyHandle = NULL_PTR;
+QueueHandle_t xCardIdQueue = NULL_PTR;
+QueueHandle_t xSensorsDataumQueue = NULL_PTR;
+SemaphoreHandle_t xCardAssignedSem = NULL_PTR;
+
+
+/**************** MAIN ****************/
 int main (void)
 {
 	/* 	Enable Clock 	*/
@@ -50,56 +75,274 @@ int main (void)
   SPI1_voidInit();
 	SPI2_voidInit();
 	UART_voidInit();
-// 	I2C_voidPeripheralControl(I2C1, I2C_ENABLE);
-//	I2C_voidInit(I2C1);
-//	ADC1_voidInit();
-	
-	/* Sensors */
-//	TempSensor_voidInit();
-//	MAX30102_voidInit();
+	I2C_voidPeripheralControl(I2C1, I2C_ENABLE);
+	I2C_voidInit(I2C1);
+	ADC1_voidInit();
 	
 	/*	Init SWC		*/
 	Display_init();
 	Reader_init();
-	
-	uint8 idtest[16] = {3 , 1 , 8 , 0 , 1 , 1 , 8 , 1 , 2 , 0 , 1 , 8 , 4 , 5 , 0 , 0 };
-	volatile nationalID_Type id = {{3 , 1 , 8 , 0 , 1 , 1 , 8 , 1 , 2 , 0 , 1 , 8 , 4 , 5 , 0 , 0 },
-												{0}
-												};
-	boolean flag = TRUE;
-	uint8 i =0 ; 
-	while(1)
-	{
-		
-		if (Reader_isNewCardPresent() == TRUE)
-		{
-			if (Reader_SetId(id) == TRUE)
-			{
-				TFT_voidPrintText(10  , 60 , "   ID IS SET   " , 0xf4c3 , 0);
+	//Observer_init();			// Sensors are not availabale yet
 
-				id = Reader_GetId();
-				for (i=0 ; i<12  ; i++)
-				{
-					if  (idtest[i] != id.id2[i])
-					{
-						flag = FALSE; 
-					}
-				}
-				if (flag == TRUE){
-					TFT_voidPrintText(10  , 70 , "   ID Retrieved   " , 0xf4c3 , 0);
-					
-					TFT_voidPrintText(10 , 80 , "31801181201845" , 0xf4c3 , 0);
-			
-					
-				}
-			}
-		}
+	// CREATE RTOS TASKS 
+	xTaskCreate(
+                    Observer_mainTask,       			/* Function that implements the task. */
+                    "OBSERVER",          					/* Text name for the task. */
+                    OBSERVER_TASK_STACK_SIZE,     /* Stack size in words, not bytes. */
+                    ( void * ) 1,    							/* Parameter passed into the task. */
+                    Observer_PRIORITY,						/* Priority at which the task is created. */
+                    &ObserverHandle );      			/* Used to pass out the created task's handle. */
+
+	xTaskCreate(
+                    Display_mainTask,       			/* Function that implements the task. */
+                    "DISPLAY",          					/* Text name for the task. */
+                    DISPLAY_TASK_STACK_SIZE,     	/* Stack size in words, not bytes. */
+                    ( void * ) 1,    							/* Parameter passed into the task. */
+                    Display_PRIORITY,							/* Priority at which the task is created. */
+                    &DisplayHandle );      				/* Used to pass out the created task's handle. */
+	xTaskCreate(
+                    Reader_MainTask,       				/* Function that implements the task. */
+                    "READER",          						/* Text name for the task. */
+                    READER_TASK_STACK_SIZE,     	/* Stack size in words, not bytes. */
+                    ( void * ) 1,    							/* Parameter passed into the task. */
+                    Reader_PRIORITY,							/* Priority at which the task is created. */
+                    &ReaderHandle );      				/* Used to pass out the created task's handle. */
+	
+	xTaskCreate(
+                    GateWay_mainTask,       			/* Function that implements the task. */
+                    "GATEWAY",          					/* Text name for the task. */
+                    GATEWAY_TASK_STACK_SIZE,     	/* Stack size in words, not bytes. */
+                    ( void * ) 1,    							/* Parameter passed into the task. */
+                    GateWay_PRIORITY,							/* Priority at which the task is created. */
+                    &GateWayHandle );      				/* Used to pass out the created task's handle. */
+xTaskCreate(
+                    Emergency_mainTask,       			/* Function that implements the task. */
+                    "EMERGENCY",          					/* Text name for the task. */
+                    EMERGENCY_TASK_STACK_SIZE,     	/* Stack size in words, not bytes. */
+                    ( void * ) 1,    								/* Parameter passed into the task. */
+                    Emergency_PRIORITY,							/* Priority at which the task is created. */
+                    &EmergencyHandle );      				/* Used to pass out the created task's handle. */
+
+									
+	// Create Queues 
+	xCardIdQueue =xQueueCreate(ID_READ_LEN , sizeof(nationalID_Type) );
+	xSensorsDataumQueue = xQueueCreate(1 , sizeof(ObserverReadingsType));
+										
+	/* Start the scheduler. */
+	vTaskStartScheduler();
+	while (1)
+	{
 	}
 	return 0;
+}		// End main
+
+/************************************************************************/
+/*                RTOS TASKS APIs Definitions                           */
+/************************************************************************/
+
+/******************************************
+ * @name : Observer_mainTask
+ * @param: NONE
+ * @return: NONE
+ * Non Reentrant
+ * Sync
+ * Main periodic task.
+ ******************************************/
+void Observer_mainTask(void * pvParameters)
+{
+	uint32_t NotifiedVal;
+	ObserverReadingsType readings = {37 , 90 , 59  , 0};
+	volatile uint8 err = 0 ;
+	volatile uint8 err_counter = 0;
+	
+	while(1)
+	{
+		if ((NotifiedVal & NEW_CARD_PRESENT_NOTIFICATION) == NEW_CARD_PRESENT_NOTIFICATION)
+		{
+			// err = Observer_GetCurrentReadings(&readings);
+			
+			/************************* TEST CODE ****************************
+			// if (readings.HeartRate < 200)
+			//	readings.HeartRate+=2;
+			if (readings.SPO2 < 100)
+					readings.SPO2+=20;
+			//if (readings.Temp < 50)
+			//	readings.Temp+=5;
+			err = 0 ;
+					if (readings.Temp < TEMP_MIN ||readings.Temp > TEMP_MAX )
+			{
+				err++;
+			}
+			if (readings.SPO2 < SPO2_MIN ||readings.SPO2 > SPO2_MAX )
+			{
+				err++;
+			}
+			if (readings.HeartRate < HEARTRATE_MIN ||readings.HeartRate > HEARTRATE_MAX )
+			{
+				err++;
+			}
+			***********************************************************************************/
+			
+			xQueueSend(xSensorsDataumQueue , &readings , portMAX_DELAY);
+			/* Check if values are in critical range while still in valid readings range */
+			if ( (readings.HeartRate <= HEARTRATE_CRITICAL_MIN && readings.HeartRate > HEARTRATE_MIN ) 
+					|| ( readings.SPO2 <= SPO2_CRITICAL_MIN  && readings.SPO2 > SPO2_MIN )
+					|| ( readings.Temp >= TEMP_CRITICAL_MIN && readings.Temp < TEMP_MAX)
+				)
+			{
+				xTaskNotify(ObserverHandle , EMERGENCY_MSG_NOTIFICATION , eSetValueWithOverwrite);
+				xTaskNotify(DisplayHandle  , EMERGENCY_MSG_NOTIFICATION  , eSetValueWithOverwrite );
+				vTaskDelay(10 / portTICK_PERIOD_MS); // to make sure notification is recieved.  
+			}
+			/* check if all values are invalid */
+			if (err > 2)
+			{
+				err_counter++;
+			}
+			else 
+			{
+				err_counter = 0;
+			}
+			if (err_counter > 10)			// check if all values are invalid for 10 times in raw. 
+			{
+				// No patient is assigned , scan a new card. 
+				xTaskNotify(DisplayHandle , CARD_DETACHED_NOTIFICATION  , eSetValueWithOverwrite );
+				xTaskNotify(ReaderHandle , CARD_DETACHED_NOTIFICATION  , eSetValueWithOverwrite );
+				// Go Idle and wait for Wake up notification
+				xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
+			}
+			else 
+			{
+				// Update display. 
+				xTaskNotify(DisplayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
+			}
+			vTaskDelay(100 / portTICK_PERIOD_MS);		
+		}
+		else 
+		{
+			xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
+		}
+		
+	}
 }
 
-/*********** Local functions definitions *************/
+/******************************************
+ * @name : Reader_MainTask
+ * @param: NONE
+ * @return: NONE
+ * Non Reentrant
+ * Sync
+ * Main periodic task.
+ ******************************************/
 
+void Reader_MainTask(void * pvParameters)
+{
+nationalID_Type ID ; 
+	uint32_t NotifiedVal = 0; 
+	while(1)
+	{
+		//NotifiedVal = 0x00; 
+		if (Reader_isNewCardPresent() == TRUE)
+		{
+			// Get ID to be used by the GateWay task in local server communication
+			ID = Reader_GetId();
+			xQueueSend(xCardIdQueue , &ID , portMAX_DELAY);	
+			
+			// Notify Observer, Display, Gateway, and emergency task to start working 
+			xTaskNotify(ObserverHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
+			xTaskNotify(DisplayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
+			xTaskNotify(GateWayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
+			xTaskNotify(EmergencyHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
+			
+			// Go Idle and wait for card detached notification
+			xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
+			Reader_init();
+		}
+		else
+		{
+			vTaskDelay(100 / portTICK_PERIOD_MS);
+		}
+	}
+}
+
+/******************************************
+ * @name : Display_mainTask
+ * @param:  NONE
+	* @return: NONE 
+ * Non Reentrant
+ * Sync
+ * main display periodic task 
+ ******************************************/
+
+	void Display_mainTask(void * pvParameters)
+{
+		uint32_t NotifiedVal  = 0; 
+		ObserverReadingsType reading; 
+		while(1)
+		{
+
+				if ( (NotifiedVal & NEW_CARD_PRESENT_NOTIFICATION) == NEW_CARD_PRESENT_NOTIFICATION)
+				{
+					xQueueReceive(xSensorsDataumQueue ,&reading , portMAX_DELAY);
+					Display_UpdateSensors(reading);
+					Display_CurrentSensorsState();
+					vTaskDelay(500 / portTICK_PERIOD_MS);
+				}
+				else if ( (NotifiedVal & CARD_DETACHED_NOTIFICATION) == CARD_DETACHED_NOTIFICATION)
+				{
+					Display_NoCard();
+				}
+				else if ((NotifiedVal & EMERGENCY_MSG_NOTIFICATION) == EMERGENCY_MSG_NOTIFICATION)
+				{
+					Display_Emeregency();
+				}
+				else 
+				{
+				}
+				xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
+
+		}
+		
+	
+}
+
+void GateWay_mainTask(void * pvParameters)
+{
+	uint32_t NotifiedVal = 0 ;
+	ObserverReadingsType reading; 
+
+	while(1)
+	{
+		xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
+		if ( (NotifiedVal & NEW_CARD_PRESENT_NOTIFICATION) == NEW_CARD_PRESENT_NOTIFICATION)
+		{
+			xQueueReceive(xSensorsDataumQueue ,&reading , portMAX_DELAY);
+			// Send over to the Gateway. 
+			// TO DO
+		}
+		else 
+		{
+		}
+	}
+}
+	
+void Emergency_mainTask(void * pvParameters)
+{
+	uint32_t NotifiedVal = 0 ;
+
+	while(1)
+	{
+		xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
+		if ( (NotifiedVal & EMERGENCY_MSG_NOTIFICATION) == EMERGENCY_MSG_NOTIFICATION)
+		{
+				// Send emergergency message to the gateway 
+				// TO DO
+		}
+	}
+}
+/************************************************************************/	
+/*********** 					Local functions definitions			 			*************/
+/************************************************************************/
 static void RCC_clkConfig(void)	
 {
 	RCC_voidInitSystemClock();
@@ -128,7 +371,7 @@ static void GPIO_config(void)
 	
 	GPIO_voidInitPortPinDirection(PORTB, PIN12, OUTPUT_PUSH_PULL_10MHZ);	// Chip Select  PIN
 	GPIO_voidInitPortPinDirection(PORTB, PIN13, AF_PUSH_PULL_10MHZ);			// CLK PIN
-//GPIO_voidInitPortPinDirection(PORTB, PIN14, INPUT_FLOATING);					// MISO PIN
+//GPIO_voidInitPortPinDirection(PORTB, PIN14, INPUT_FLOATING);					// MISO PIN - Not IN USE
 	GPIO_voidInitPortPinDirection(PORTB, PIN15, AF_PUSH_PULL_10MHZ);			// MOSI PIN
 	GPIO_voidInitPortPinDirection(PORTB, PIN5, OUTPUT_PUSH_PULL_10MHZ);		// LED PIN
 	
@@ -149,7 +392,8 @@ static void GPIO_config(void)
 	GPIO_voidInitPortPinDirection(PORTB, PIN6, AF_OPEN_DRAIN_2MHZ);			// SCL PIN
 	GPIO_voidInitPortPinDirection(PORTB, PIN7, AF_OPEN_DRAIN_2MHZ);			// SDA PIN
 	
-	// GPIO configuration of Temp sensor is handled within the driver. 
-	
+	// GPIO configuration of Temp sensor. 
+	GPIO_voidInitPortPinDirection( PORTB , PIN0 , INPUT_ANALOG);				// Temp Sensor PIN 
+
 	return ; 
 }
