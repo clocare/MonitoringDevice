@@ -15,11 +15,11 @@
 #define HEARTRATE_MAX						200U
 #define HEARTRATE_CRITICAL_MIN	60U
 
-#define SPO2_MIN						40U
-#define SPO2_MAX						101U
-#define SPO2_CRITICAL_MIN		90U
+#define SPO2_MIN								40U
+#define SPO2_MAX								101U
+#define SPO2_CRITICAL_MIN				90U
 
-
+#define MAX_ERROR_COUNT						5
 typedef struct ObserverReadingsType
 {
 	float32 Temp;

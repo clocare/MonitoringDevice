@@ -47,7 +47,7 @@ typedef struct
 #define MAX_UART_CH     3
 
 UART_CONFIG user_configuration_t [MAX_UART_CH] = {
-    {UART_Enable  , BPS_9600 , CLK_HZ , No_Parity , TRANSMIT_RECIEVE},
+    {UART_Enable  , BPS_115200 , CLK_HZ , No_Parity , TRANSMIT_RECIEVE},
     {UART_Disable , BPS_9600 , CLK_HZ , No_Parity , TRANSMIT_RECIEVE},
     {UART_Disable , BPS_115200 , CLK_HZ , No_Parity , TRANSMIT_RECIEVE},
 };

@@ -17,8 +17,8 @@ MIFARE_Key key;
 /*														Local Functions														*/
 /************************************************************************/
 static boolean Reader_AuthCard(uint8 block);
-static boolean Reader_WriteID ( nationalID_Type ID);
-static boolean Reader_ReadID (nationalID_Type * ID);
+static boolean Reader_WriteLoginData ( loginData_Type login);
+static boolean Reader_ReadID (loginData_Type * login);
 /************************************************************************/
 /*                        APIs Definitions                              */
 /************************************************************************/
@@ -66,13 +66,11 @@ boolean Reader_isNewCardPresent(void)
  * Sync
  * Service to set new ID in card.
  ******************************************/
-boolean Reader_SetId(nationalID_Type Id)
+boolean Reader_SetLoginData(loginData_Type login)
 {
-	volatile boolean ret = FALSE; 
-	if (Reader_AuthCard(ID_BLOCK) == TRUE)
-	{
-		ret = Reader_WriteID(Id);
-	}
+	boolean ret = FALSE; 
+	ret = Reader_WriteLoginData(login);
+	
 	return ret;
 }
 
@@ -84,17 +82,17 @@ boolean Reader_SetId(nationalID_Type Id)
  * Sync
  * Service to read card ID. 
  ******************************************/
-nationalID_Type Reader_GetId (void)
+loginData_Type Reader_GetLogin (void)
 {
-	nationalID_Type ID ;
-	volatile nationalID_Type ret_ID = {0};
+	loginData_Type ID ;
+	volatile loginData_Type ret_ID = {0};
 	uint8 i = 0 ;
 	if (Reader_AuthCard(ID_BLOCK) == TRUE)
 	{
 		if (Reader_ReadID(&ID) == TRUE)
 		{
 			for (i=0 ; i < ID_READ_LEN ; i++)
-				ret_ID.id2[i] = ID.id2[i]; 
+				ret_ID.id_r[i] = ID.id_r[i]; 
 		}
 	}
 	__asm("NOP");
@@ -115,20 +113,32 @@ static boolean Reader_AuthCard(uint8 block)
 	}
 	return ret; 
 }
-static boolean Reader_WriteID (nationalID_Type ID)
+static boolean Reader_WriteLoginData (loginData_Type login)
 {
 	boolean ret = FALSE; 
-	if (PICC_WriteBlock(ID_BLOCK, ID.id1 , &key) == mfrc522_STATUS_OK)
+	int status1 = -1  , status2 = -1;
+	if (Reader_AuthCard(ID_BLOCK) == TRUE)
 	{
-		ret = TRUE;
+		status1 = PICC_WriteBlock(ID_BLOCK, login.id_w , &key) ;
 	}
+	
+	__asm("NOP");
+	
+	if (Reader_AuthCard(PASS_BLOCK) == TRUE)
+	{
+		status2 = PICC_WriteBlock(PASS_BLOCK , login.Pass_w , &key) ; 
+	}
+	
+	if (status1 == mfrc522_STATUS_OK && status2 == mfrc522_STATUS_OK)
+		ret =  TRUE;
+	
 	return ret; 
 }
 
-static boolean Reader_ReadID (nationalID_Type * ID)
+static boolean Reader_ReadID (loginData_Type * ID)
 {
-	volatile boolean ret = FALSE ;
-	volatile int status = PICC_ReadBlock(ID_BLOCK, ID->id2  , &key ); 
+	boolean ret = FALSE ;
+	int status = PICC_ReadBlock(ID_BLOCK, ID->id_r  , &key ); 
 	if ( status == mfrc522_STATUS_OK)
 	{
 		ret = TRUE; 

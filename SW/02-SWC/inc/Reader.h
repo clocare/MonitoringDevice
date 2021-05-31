@@ -15,14 +15,20 @@
 #define ID_READ_LEN			18U
 #define ID_BLOCK				04U			// Block in tag memory
 
+#define PASS_WRITE_LEN		16U			// pass len 
+#define PASS_READ_LEN			18U
+#define PASS_BLOCK				05U
 /************************************************************************/
 /*                          Type definitions                            */
 /************************************************************************/
-typedef struct nationalID_Type
+typedef struct loginData_Type
 {
-	uint8 id1[ID_WRITE_LEN];		// last byte is 0
-	uint8 id2[ID_READ_LEN];			// last byte is 0
-}nationalID_Type;	
+	uint8 id_w[ID_WRITE_LEN];		
+	uint8 id_r[ID_READ_LEN];			
+	
+	uint8 Pass_w[PASS_WRITE_LEN];
+	uint8 Pass_r[PASS_READ_LEN];
+}loginData_Type;	
 
 /************************************************************************/
 /*                        Functions APIs	                              */
@@ -32,9 +38,9 @@ void Reader_init(void);
 
 boolean Reader_isNewCardPresent(void);
 
-boolean Reader_SetId(nationalID_Type Id);
+boolean Reader_SetLoginData(loginData_Type loginData );
 
-nationalID_Type Reader_GetId (void);
+loginData_Type Reader_GetLogin (void);
 
 
 #endif
