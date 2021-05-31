@@ -19,7 +19,7 @@
 #define Observer_PRIORITY							( tskIDLE_PRIORITY + 2 )
 #define Reader_PRIORITY								( tskIDLE_PRIORITY + 2 )
 #define Display_PRIORITY							( tskIDLE_PRIORITY + 2 )
-#define GateWay_PRIORITY							( tskIDLE_PRIORITY + 2 )
+#define GateWay_PRIORITY							( tskIDLE_PRIORITY + 3 )
 #define Emergency_PRIORITY						( tskIDLE_PRIORITY + 2 )
 
 /* Task Stack Size */

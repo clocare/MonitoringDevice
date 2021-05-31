@@ -25,6 +25,7 @@
 
 /***************** ECUAL Drivers *****************/
 #include "TFT_interface.h"
+#include "ESP8266.h"
 #include "mfrc522.h"
 #include "TempSensor_interface.h"
 #include "MAX30102_interface.h"
@@ -33,6 +34,7 @@
 #include "Display.h"
 #include "Reader.h"
 #include "Observer.h"
+#include "GateWay.h"
 #include "App_tasks.h"
 
 /***************** Free RTOS files *****************/
@@ -83,7 +85,7 @@ int main (void)
 	Display_init();
 	Reader_init();
 	//Observer_init();			// Sensors are not availabale yet
-
+	GateWay_init();
 	// CREATE RTOS TASKS 
 	xTaskCreate(
                     Observer_mainTask,       			/* Function that implements the task. */
@@ -125,7 +127,7 @@ xTaskCreate(
 
 									
 	// Create Queues 
-	xCardIdQueue =xQueueCreate(ID_READ_LEN , sizeof(nationalID_Type) );
+	xCardIdQueue =xQueueCreate(ID_READ_LEN , sizeof(loginData_Type) );
 	xSensorsDataumQueue = xQueueCreate(1 , sizeof(ObserverReadingsType));
 										
 	/* Start the scheduler. */
@@ -151,7 +153,7 @@ xTaskCreate(
 void Observer_mainTask(void * pvParameters)
 {
 	uint32_t NotifiedVal;
-	ObserverReadingsType readings = {37 , 90 , 59  , 0};
+	ObserverReadingsType readings = {37 , HEARTRATE_MIN , SPO2_MIN  , 0};
 	volatile uint8 err = 0 ;
 	volatile uint8 err_counter = 0;
 	
@@ -161,15 +163,15 @@ void Observer_mainTask(void * pvParameters)
 		{
 			// err = Observer_GetCurrentReadings(&readings);
 			
-			/************************* TEST CODE ****************************
-			// if (readings.HeartRate < 200)
-			//	readings.HeartRate+=2;
-			if (readings.SPO2 < 100)
-					readings.SPO2+=20;
-			//if (readings.Temp < 50)
-			//	readings.Temp+=5;
+			/************************* TEST CODE ****************************/
+			 if (readings.HeartRate < 180)
+					readings.HeartRate+=5;
+			if (readings.SPO2 < 120)
+					readings.SPO2+=10;
+			if (readings.Temp < 250)
+					readings.Temp+=5;
 			err = 0 ;
-					if (readings.Temp < TEMP_MIN ||readings.Temp > TEMP_MAX )
+			if (readings.Temp < TEMP_MIN ||readings.Temp > TEMP_MAX )
 			{
 				err++;
 			}
@@ -181,19 +183,24 @@ void Observer_mainTask(void * pvParameters)
 			{
 				err++;
 			}
-			***********************************************************************************/
+			/***********************************************************************************/
 			
-			xQueueSend(xSensorsDataumQueue , &readings , portMAX_DELAY);
+			xQueueOverwrite(xSensorsDataumQueue , &readings );
 			/* Check if values are in critical range while still in valid readings range */
 			if ( (readings.HeartRate <= HEARTRATE_CRITICAL_MIN && readings.HeartRate > HEARTRATE_MIN ) 
 					|| ( readings.SPO2 <= SPO2_CRITICAL_MIN  && readings.SPO2 > SPO2_MIN )
 					|| ( readings.Temp >= TEMP_CRITICAL_MIN && readings.Temp < TEMP_MAX)
 				)
 			{
-				xTaskNotify(ObserverHandle , EMERGENCY_MSG_NOTIFICATION , eSetValueWithOverwrite);
+				xTaskNotify(EmergencyHandle , EMERGENCY_MSG_NOTIFICATION , eSetValueWithOverwrite);
 				xTaskNotify(DisplayHandle  , EMERGENCY_MSG_NOTIFICATION  , eSetValueWithOverwrite );
 				vTaskDelay(10 / portTICK_PERIOD_MS); // to make sure notification is recieved.  
 			}
+			else 
+			{
+				// ok
+			}
+			
 			/* check if all values are invalid */
 			if (err > 2)
 			{
@@ -203,20 +210,32 @@ void Observer_mainTask(void * pvParameters)
 			{
 				err_counter = 0;
 			}
-			if (err_counter > 10)			// check if all values are invalid for 10 times in raw. 
+			
+			
+			if (err_counter > MAX_ERROR_COUNT)			// check if all values are invalid for x times in raw. 
 			{
 				// No patient is assigned , scan a new card. 
 				xTaskNotify(DisplayHandle , CARD_DETACHED_NOTIFICATION  , eSetValueWithOverwrite );
-				xTaskNotify(ReaderHandle , CARD_DETACHED_NOTIFICATION  , eSetValueWithOverwrite );
+				xTaskNotify(ReaderHandle  , CARD_DETACHED_NOTIFICATION  , eSetValueWithOverwrite );
+				xTaskNotify(GateWayHandle , CARD_DETACHED_NOTIFICATION  , eSetValueWithOverwrite );
+
 				// Go Idle and wait for Wake up notification
 				xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
 			}
+			else if (err == 0)
+			{
+				// Update readings 
+				xTaskNotify(GateWayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
+				// Update display. 
+				xTaskNotify(DisplayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
+			}			
 			else 
 			{
 				// Update display. 
 				xTaskNotify(DisplayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
 			}
-			vTaskDelay(100 / portTICK_PERIOD_MS);		
+
+			vTaskDelay(300 / portTICK_PERIOD_MS);		// Wait before new reading collection
 		}
 		else 
 		{
@@ -237,7 +256,7 @@ void Observer_mainTask(void * pvParameters)
 
 void Reader_MainTask(void * pvParameters)
 {
-nationalID_Type ID ; 
+loginData_Type ID ; 
 	uint32_t NotifiedVal = 0; 
 	while(1)
 	{
@@ -245,14 +264,12 @@ nationalID_Type ID ;
 		if (Reader_isNewCardPresent() == TRUE)
 		{
 			// Get ID to be used by the GateWay task in local server communication
-			ID = Reader_GetId();
-			xQueueSend(xCardIdQueue , &ID , portMAX_DELAY);	
+			ID = Reader_GetLogin();
+			xQueueSend(xCardIdQueue , &ID  , portMAX_DELAY);	
 			
 			// Notify Observer, Display, Gateway, and emergency task to start working 
 			xTaskNotify(ObserverHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
 			xTaskNotify(DisplayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
-			xTaskNotify(GateWayHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
-			xTaskNotify(EmergencyHandle , NEW_CARD_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
 			
 			// Go Idle and wait for card detached notification
 			xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
@@ -283,10 +300,10 @@ nationalID_Type ID ;
 
 				if ( (NotifiedVal & NEW_CARD_PRESENT_NOTIFICATION) == NEW_CARD_PRESENT_NOTIFICATION)
 				{
-					xQueueReceive(xSensorsDataumQueue ,&reading , portMAX_DELAY);
+					xQueuePeek( xSensorsDataumQueue, &( reading ), portMAX_DELAY);
 					Display_UpdateSensors(reading);
 					Display_CurrentSensorsState();
-					vTaskDelay(500 / portTICK_PERIOD_MS);
+					// vTaskDelay(500 / portTICK_PERIOD_MS);
 				}
 				else if ( (NotifiedVal & CARD_DETACHED_NOTIFICATION) == CARD_DETACHED_NOTIFICATION)
 				{
@@ -310,15 +327,18 @@ void GateWay_mainTask(void * pvParameters)
 {
 	uint32_t NotifiedVal = 0 ;
 	ObserverReadingsType reading; 
+	loginData_Type ID ; 
 
 	while(1)
 	{
 		xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
 		if ( (NotifiedVal & NEW_CARD_PRESENT_NOTIFICATION) == NEW_CARD_PRESENT_NOTIFICATION)
 		{
-			xQueueReceive(xSensorsDataumQueue ,&reading , portMAX_DELAY);
-			// Send over to the Gateway. 
-			// TO DO
+			xQueuePeek(xSensorsDataumQueue ,&reading , portMAX_DELAY);
+			xQueuePeek(xCardIdQueue ,&ID , portMAX_DELAY);
+			// Send over to the Gateway.
+			GateWay_WriteLoginData(ID);
+			GateWay_WriteSensorsReadings(reading);
 		}
 		else 
 		{
@@ -329,14 +349,15 @@ void GateWay_mainTask(void * pvParameters)
 void Emergency_mainTask(void * pvParameters)
 {
 	uint32_t NotifiedVal = 0 ;
-
+	loginData_Type ID ; 
 	while(1)
 	{
 		xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
 		if ( (NotifiedVal & EMERGENCY_MSG_NOTIFICATION) == EMERGENCY_MSG_NOTIFICATION)
 		{
-				// Send emergergency message to the gateway 
-				// TO DO
+				xQueuePeek(xCardIdQueue ,&ID , portMAX_DELAY);
+				GateWay_WriteLoginData(ID);
+				GateWay_SendEmergencyMsg();
 		}
 	}
 }
@@ -351,6 +372,7 @@ static void RCC_clkConfig(void)
 	RCC_voidEnableClock(t_APB2, RCC_APB2ENR_AFIOEN);
 	RCC_voidEnableClock(t_APB2, RCC_APB2ENR_SPI1EN);
 	RCC_voidEnableClock(t_APB1, RCC_APB1ENR_SPI2EN);
+	RCC_voidEnableClock(t_APB2 , RCC_APB2ENR_USART1EN);
 	RCC_voidEnableClock(t_APB1, RCC_APB1ENR_TIM3EN);
 	RCC_voidEnableClock(t_APB1, RCC_APB1ENR_I2C1EN);
 	RCC_voidEnableClock(t_APB2, RCC_APB2ENR_ADC1EN );
@@ -391,6 +413,10 @@ static void GPIO_config(void)
 	// init SPO2 & I2C 
 	GPIO_voidInitPortPinDirection(PORTB, PIN6, AF_OPEN_DRAIN_2MHZ);			// SCL PIN
 	GPIO_voidInitPortPinDirection(PORTB, PIN7, AF_OPEN_DRAIN_2MHZ);			// SDA PIN
+	
+	// init UART pins 
+	GPIO_voidInitPortPinDirection(PORTA  , PIN9 , AF_PUSH_PULL_50MHZ);  // TX PIN
+	GPIO_voidInitPortPinDirection(PORTA , PIN10 , INPUT_FLOATING);			// RX PIN
 	
 	// GPIO configuration of Temp sensor. 
 	GPIO_voidInitPortPinDirection( PORTB , PIN0 , INPUT_ANALOG);				// Temp Sensor PIN 
