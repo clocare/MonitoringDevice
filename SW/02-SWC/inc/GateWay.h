@@ -13,9 +13,9 @@
 
 void GateWay_init(void);
 
-void GateWay_WriteSensorsReadings(const ObserverReadingsType readings);
+boolean GateWay_WriteSensorsReadings(const ObserverReadingsType readings);
 
-void GateWay_WriteLoginData(const loginData_Type loginData);
+boolean GateWay_WriteLoginData(const loginData_Type loginData);
 
 void GateWay_SendEmergencyMsg(void);
 #endif
