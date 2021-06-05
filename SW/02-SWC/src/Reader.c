@@ -19,6 +19,8 @@ MIFARE_Key key;
 static boolean Reader_AuthCard(uint8 block);
 static boolean Reader_WriteLoginData ( loginData_Type login);
 static boolean Reader_ReadID (loginData_Type * login);
+static boolean Reader_ReadPASS (loginData_Type * login);
+
 /************************************************************************/
 /*                        APIs Definitions                              */
 /************************************************************************/
@@ -95,6 +97,14 @@ loginData_Type Reader_GetLogin (void)
 				ret_ID.id_r[i] = ID.id_r[i]; 
 		}
 	}
+	if (Reader_AuthCard(PASS_BLOCK) == TRUE)
+	{
+		if (Reader_ReadPASS(&ID) ==  TRUE)
+		{
+			for (i=0 ; i < PASS_READ_LEN ; i++)
+				ret_ID.Pass_r[i] = ID.Pass_r[i]; 
+		}
+	}
 	__asm("NOP");
 	return ret_ID; 
 }
@@ -139,6 +149,17 @@ static boolean Reader_ReadID (loginData_Type * ID)
 {
 	boolean ret = FALSE ;
 	int status = PICC_ReadBlock(ID_BLOCK, ID->id_r  , &key ); 
+	if ( status == mfrc522_STATUS_OK)
+	{
+		ret = TRUE; 
+	}
+	return ret; 
+}
+
+static boolean Reader_ReadPASS (loginData_Type * login)
+{
+	boolean ret = FALSE ;
+	int status = PICC_ReadBlock(PASS_BLOCK, login->Pass_r  , &key ); 
 	if ( status == mfrc522_STATUS_OK)
 	{
 		ret = TRUE; 
