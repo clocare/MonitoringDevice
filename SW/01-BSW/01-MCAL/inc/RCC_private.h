@@ -20,12 +20,6 @@
 #define  RCC_CSR            *((volatile uint32 *) 0x40021024)
 #define  RCC_AHBSTR         *((volatile uint32 *) 0x40021028)
 
-
-// Clock source definitions 
-#define HSI         0
-#define HSE_RC      1
-#define HSE_XTAL    2
-
 // PLL options 
 #define RCC_PLL_HSI_DIV2    0
 #define RCC_PLL_HSE_DIV2    1
@@ -115,4 +109,40 @@
 #define RCC_CFGR_MCO2   26
 #define RCC_CFGR_MCO3   27
 
+
+/* CLOCKS PRESCALAR MACROS */
+
+/* AHB PRESCALAR */
+
+#define RCC_AHB_PRESCALAR_DIV_NO 	0x0
+#define RCC_AHB_PRESCALAR_DIV_2 	0x8
+#define RCC_AHB_PRESCALAR_DIV_4 	0x9
+#define RCC_AHB_PRESCALAR_DIV_8 	0xA
+#define RCC_AHB_PRESCALAR_DIV_16 	0xB
+#define RCC_AHB_PRESCALAR_DIV_64 	0xC
+#define RCC_AHB_PRESCALAR_DIV_128 	0xD
+#define RCC_AHB_PRESCALAR_DIV_256 	0xE
+#define RCC_AHB_PRESCALAR_DIV_512 	0xF
+
+/*****************/
+
+/* APB1 PRESCALAR */
+
+#define RCC_APB1_PRESCALAR_DIV_NO 	0x0
+#define RCC_APB1_PRESCALAR_DIV_2 	0x4
+#define RCC_APB1_PRESCALAR_DIV_4 	0x5
+#define RCC_APB1_PRESCALAR_DIV_8 	0x6
+#define RCC_APB1_PRESCALAR_DIV_16 	0x7
+
+/*****************/
+
+/* APB2 PRESCALAR */
+
+#define RCC_APB2_PRESCALAR_DIV_NO 	0x0
+#define RCC_APB2_PRESCALAR_DIV_2 	0x4
+#define RCC_APB2_PRESCALAR_DIV_4 	0x5
+#define RCC_APB2_PRESCALAR_DIV_8 	0x6
+#define RCC_APB2_PRESCALAR_DIV_16 	0x7
+
+/*****************/
 #endif  // End Of File

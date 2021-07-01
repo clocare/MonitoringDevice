@@ -12,32 +12,21 @@
 void Observer_init(void)
 {
 	/* init sensors modules */	
-	TempSensor_voidInit();
 	MAX30102_voidInit();
+	TempSensor_voidInit();
 	
 	return ; 
 }
 
-uint8 Observer_GetCurrentReadings(ObserverReadingsType * ObserverReadings)
+uint8 Observer_GetCurrentTemp(ObserverReadingsType * ObserverReadings)
 {
 	uint8 err = 0 ;
-	ObserverReadings->Temp = TempSensor_f32TempRead();
-	
-	ObserverReadings->SPO2 = MAX30102_u8GetSPO2Value();
-	
-	ObserverReadings->HeartRate = MAX30102_u8GetHRValue();
+	ObserverReadings->Temp = TempSensor_f32TempRead();	
 	if (ObserverReadings->Temp < TEMP_MIN ||ObserverReadings->Temp > TEMP_MAX )
 	{
 		err++;
 	}
-	if (ObserverReadings->SPO2 < SPO2_MIN ||ObserverReadings->SPO2 > SPO2_MAX )
-	{
-		err++;
-	}
-	if (ObserverReadings->HeartRate < HEARTRATE_MIN ||ObserverReadings->HeartRate > HEARTRATE_MAX )
-	{
-		err++;
-	}
+
 	return err; 
 }
 

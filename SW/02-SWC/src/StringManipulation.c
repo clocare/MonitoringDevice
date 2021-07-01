@@ -53,7 +53,7 @@
  void AppendFloatToString(uint8 * string, float32 floatValue)
 {
 	uint32 Mantissa = (uint32)(floatValue);
-	uint32 exp = (uint32) ( (float32)floatValue - (Mantissa*1.0) * 100 );
+	uint32 exp = (uint32) (( (float32)floatValue - (Mantissa*1.0) ) * 100 );
 	AppendIntegerToString(string , Mantissa);
 	AppendChar (string , '.');
 	AppendIntegerToString(string , exp);

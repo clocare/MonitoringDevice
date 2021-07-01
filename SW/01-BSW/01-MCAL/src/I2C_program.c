@@ -56,7 +56,7 @@ void I2C_voidInit(uint8 I2Cx)
 {
 	I2C_RegDef_t * pI2Cx = I2C_GetBaseAdd(I2Cx);
 
-	uint32 TempFreq = SYSTEM_CLK_MHZ/(AHB_PRE*AHB1_PRE);
+	uint32 TempFreq = SYSTEM_CLK_MHZ/(AHB_PRE*APB1_PRE);
 
 	/* Setting the Auto Acking value */
 	pI2Cx->CR1 |= (I2C1_ACKControl << I2C_CR1_ACK);
@@ -101,6 +101,9 @@ void I2C_voidInit(uint8 I2Cx)
  */
 void I2C_voidMasterSendData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 SlaveAdd, uint8 RepeatedState)
 {
+	for (int i = 0; i < 100; i++) {
+		__asm("NOP");
+	}
 	I2C_RegDef_t * pI2Cx = I2C_GetBaseAdd(I2Cx);
 
 //	pI2Cx->SR1 = 0;
@@ -111,16 +114,23 @@ void I2C_voidMasterSendData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 Slav
 	I2C_VOID_SEND_START_CONDITION(pI2Cx);
 
 	/* Wait until start condition is generated successfully (until SB bit in SR1 register = 1) */
-	while(! GET_BIT(pI2Cx->SR1, I2C_SR1_SB));
+	while( ( GET_BIT(pI2Cx->SR1 , I2C_SR1_SB) ) == 0)
+	{
+		__asm("NOP");
+	}
 
 	/* Writing DR register with slave Address with LSB reset (Bit 0 = 0) */
 	I2C_voidExicuteSendAddress(pI2Cx, SlaveAdd, I2C_TRANSMIT);
 
 	/* Wait until address transmission is done successfully (until ADDR bit in SR1 register = 1) */
-	while(! GET_BIT(pI2Cx->SR1, I2C_SR1_ADDR));
+	while(0 == ( GET_BIT(pI2Cx->SR1 , I2C_SR1_ADDR)))
+	{
+		__asm("NOP");
+	}
+
 
 	/* Reset ADDR by reading SR2 register (SR1 was already read in the previous step)*/
-	(void)GET_BIT(pI2Cx->SR2, I2C_SR2_MSL);
+	volatile uint8 readReg =  GET_BIT(pI2Cx->SR2, I2C_SR2_MSL);
 
 	/*********		Loop this part until the needed bytes are sent  		*********/
 	for(uint8 i = 0; i < Len; i++)
@@ -133,7 +143,11 @@ void I2C_voidMasterSendData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 Slav
 	/*********************************************************************************/
 
 	/* wait until the shift register , data register are empty after transmitting all the data (BTF = 1) */
-	while(! GET_BIT(pI2Cx->SR1, I2C_SR1_BTF));
+//	while(! GET_BIT(pI2Cx->SR1, I2C_SR1_TXE));
+	while(0 == GET_BIT(pI2Cx->SR1, I2C_SR1_BTF))
+	{
+		__asm("NOP");
+	}
 
 	switch(RepeatedState)
 	{
@@ -144,7 +158,10 @@ void I2C_voidMasterSendData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 Slav
 	default:
 		break;
 	}
-	__asm("NOP");
+	for (int i = 0; i < 100; i++)
+	{
+		__asm("NOP");
+	}
 }
 
 
@@ -158,9 +175,10 @@ void I2C_voidMasterSendData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 Slav
  */
 void I2C_voidMasterReceiveData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 SlaveAdd)
 {
-
+	for (int i = 0; i < 10; i++) {
+		__asm("NOP");
+	}
 	I2C_RegDef_t * pI2Cx = I2C_GetBaseAdd(I2Cx);
-
 
 //	pI2Cx->SR1 = 0;
 	/* wait until the shift register , data register are empty after transmitting all the data (BTF = 1) */
@@ -170,41 +188,53 @@ void I2C_voidMasterReceiveData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 S
 	I2C_VOID_SEND_START_CONDITION(pI2Cx);
 
 	/* Wait until start condition is generated successfully (until SB bit in SR1 register = 1) */
-	while(! GET_BIT(pI2Cx->SR1, I2C_SR1_SB));
+		while( ( GET_BIT(pI2Cx->SR1 , I2C_SR1_SB) ) == 0)
+	{
+		__asm("NOP");
+	}
+
 
 	/* Writing DR register with slave Address with LSB set (Bit 0 = 1) */
 	I2C_voidExicuteSendAddress(pI2Cx, SlaveAdd, I2C_RECEIVE);
 
 	/* Wait until address transmission is done successfully (until ADDR bit in SR1 register = 1) */
-	while(! GET_BIT(pI2Cx->SR1, I2C_SR1_ADDR));
-
+		while(0 == (GET_BIT(pI2Cx->SR1 , I2C_SR1_ADDR)))
+	{
+		__asm("NOP");
+	}
 	switch(Len)
 	{
 	case 1:
 		I2C_VOID_DISABLE_ACK(pI2Cx);
 
 		/* Reset ADDR by reading SR2 register (SR1 was already read in the previous step)*/
-		(void)GET_BIT(pI2Cx->SR2, I2C_SR2_MSL);
-
-		I2C_VOID_SEND_STOP_CONDITION(pI2Cx);
-
+		volatile uint8 read = GET_BIT(pI2Cx->SR2, I2C_SR2_MSL);
+		
 		/* Check if data register is not empty (RxNE bit in SR1 register = 1) */
-		while(! GET_BIT(pI2Cx->SR1, I2C_SR1_RXNE));
+		while(0 == GET_BIT(pI2Cx->SR1, I2C_SR1_RXNE))
+		{
+			//__asm("NOP");
+		}
 
 
 		/* Read Data from DR register */
 		pTxBuffer[0] = pI2Cx->DR;
+		I2C_VOID_SEND_STOP_CONDITION(pI2Cx);
+
 		break;
 	default:
 		I2C_VOID_ENABLE_ACK(pI2Cx);
 		/* Reset ADDR by reading SR2 register (SR1 was already read in the previous step)*/
-		(void)GET_BIT(pI2Cx->SR2, I2C_SR2_MSL);
+		volatile uint8 readReg = GET_BIT(pI2Cx->SR2, I2C_SR2_MSL);
 
 		/*********		Loop this part until the needed bytes are sent  		*********/
 		for(uint8 i = 0; i < Len-1; i++)
 		{
 		/* Check if data register is not empty (RxNE bit in SR1 register = 1) */
-		while( (! GET_BIT(pI2Cx->SR1, I2C_SR1_RXNE)) && (! GET_BIT(pI2Cx->SR1, I2C_SR1_BTF)));
+		while( (0 == GET_BIT(pI2Cx->SR1, I2C_SR1_RXNE)) && (0 == GET_BIT(pI2Cx->SR1, I2C_SR1_BTF)))
+		{
+			__asm("NOP");
+		}
 		/* Read Data from DR register */
 		pTxBuffer[i] = pI2Cx->DR;
 		}
@@ -214,14 +244,19 @@ void I2C_voidMasterReceiveData(uint8 I2Cx, uint8 * pTxBuffer, uint8 Len, uint8 S
 		I2C_VOID_SEND_STOP_CONDITION(pI2Cx);
 
 		/* Check if data register is not empty (RxNE bit in SR1 register = 1) */
-		while( (! GET_BIT(pI2Cx->SR1, I2C_SR1_RXNE)) && (! GET_BIT(pI2Cx->SR1, I2C_SR1_BTF)));
+		while( (0 == GET_BIT(pI2Cx->SR1, I2C_SR1_RXNE)) && (0 == GET_BIT(pI2Cx->SR1, I2C_SR1_BTF)))
+		{
+			__asm("NOP");
+		}
 
 		/* Read Data from DR register */
 		pTxBuffer[Len-1] = pI2Cx->DR;
 		break;
 	}
 
-	__asm("NOP");
+	for (int i = 0; i < 10; i++){
+		__asm("NOP");
+	}
 }
 
 /*

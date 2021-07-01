@@ -23,15 +23,11 @@
 #define MAX30102_FIFO_ROLLOVER_DISABLE	0
 
 /********************************/
-
-
-
 /*	Mode Control Options	*/
 #define MAX30102_HEART_RATE_MODE		2
 #define MAX30102_SPO2_MODE				3
 #define MAX30102_MULTILED_MODE			7
 /********************************/
-
 
 /*	SpO2 Configuration options	*/
 
@@ -65,15 +61,52 @@
 #define MAX30102_LED2					2			/*	IR  LED	*/
 /****************************/
 
+#define STORAGE_SIZE 		4 	//Each long is 4 bytes so limit this to fit on your micro
+#define I2C_BUFFER_LENGTH 	32	// default value
 
+
+typedef struct Record
+  {
+    uint32 red[STORAGE_SIZE];
+    uint32 IR[STORAGE_SIZE];
+    //uint32 green[STORAGE_SIZE];
+    uint8 head;
+    uint8 tail;
+  } sense_struct; //This is our circular buffer of readings from the sensor
+
+
+/* users functions */
+void MAX30102_voidInit(void);
+float MAX30102_readTemperature(void);
+sint32 MAX30102_u8GetSPO2Value(void);
+sint32 MAX30102_u8GetHRValue(void);	
+/* Data collection */
+uint8 MAX30102_available(void);
+uint32 MAX30102_getRed(void);
+uint32 MAX30102_getIR(void);
+uint32 MAX30102_getFIFORed(void);
+uint32 MAX30102_getFIFOIR(void);
+void MAX30102_nextSample(void);
+//Polls the sensor for new data
+//Call regularly
+//If new data is available, it updates the head and tail in the main struct
+//Returns number of new samples obtained
+uint16 MAX30102_check(void);
+boolean MAX30102_safeCheck(uint8 maxTimeToCheck);
+
+
+/* cmds functions */
 void MAX30102_voidWriteRegister(uint8 Cpy_u8Register, uint8 Cpy_u8Value);
 void MAX30102_voidWriteSeqRegisters(uint8 Cpy_u8StartRegister, uint8 * p_u8Values, uint8 Cpy_u8NoOfVals);
 uint8 MAX30102_u8ReadRegister(uint8 Cpy_u8Register);
 void MAX30102_voidReadSeqRegisters(uint8 Cpy_u8StartRegister, uint8 * p_u8Values, uint8 Cpy_u8NoOfVals);
-void MAX30102_voidInit(void);
 void MAX30102_voidGetReadings(uint32 * p_u8IR_RxBuffer, uint32 * p_u8Red_RxBuffer);
+void MAX30102_shutDown(void);
+void MAX30102_wakeUp(void);
+void MAX30102_clearFIFO(void);
+uint8 MAX30102_getWritePointer(void);
+uint8 MAX30102_getReadPointer(void);
 
-uint8 MAX30102_u8GetSPO2Value(void);
-uint8 MAX30102_u8GetHRValue(void);
+
 
 #endif /* MAX30102_INTERFACE_H_ */

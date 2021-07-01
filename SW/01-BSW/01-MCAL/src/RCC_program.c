@@ -18,7 +18,7 @@
 
 
 void RCC_voidInitSystemClock(){
-   
+		RCC_CR = 0x00; 
     #if CLOCK_SRC == HSE_RC
         
         SET_BIT(RCC_CR , RCC_CR_HSEON);             // Enable External clock
@@ -86,8 +86,9 @@ void RCC_voidInitSystemClock(){
         CLR_BIT (RCC_CFGR , RCC_CFGR_SW0);      
     
     #endif
-
-    RCC_CFGR |=  ( MICRO_OUTPUT_CLOCK <<  RCC_CFGR_MCO0); //Select output clock
+		/* Clock prescalars */
+		RCC_CFGR |= ((RCC_AHB_PRESCALAR_DIV << RCC_CFGR_HPRE0) | (RCC_APB1_PRESCALAR_DIV << RCC_CFGR_PPRE10) | (RCC_APB2_PRESCALAR_DIV << RCC_CFGR_PPRE20));
+ //   RCC_CFGR |=  ( MICRO_OUTPUT_CLOCK <<  RCC_CFGR_MCO0); //Select output clock
 }
 
 void RCC_voidEnableClock(BUS_ID copy_bus_id , uint8 copy_periphiral_id){

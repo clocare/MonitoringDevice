@@ -13,15 +13,15 @@
  * I2C peripheral register definition structure
  */
 typedef struct{
-	 uint32 CR1  ;
-	 uint32 CR2  ;
-	 uint32 OAR1 ;
-	 uint32 OAR2 ;
-	 uint32 DR   ;
-	 uint32 SR1  ;
-	 uint32 SR2  ;
-	 uint32 CCR	 ;
-	 uint32 TRISE;
+	 volatile uint32 CR1  ;
+	 volatile uint32 CR2  ;
+	 volatile uint32 OAR1 ;
+	 volatile uint32 OAR2 ;
+	 volatile uint32 DR   ;
+	 volatile uint32 SR1  ;
+	 volatile uint32 SR2  ;
+	 volatile uint32 CCR	 ;
+	 volatile uint32 TRISE;
 }I2C_RegDef_t;
 
 
@@ -34,8 +34,8 @@ typedef struct{
 /*
  * I2Cx peripheral definition macros
  */
-#define I2C1_BASE		((I2C_RegDef_t *)I2C1_BASE_ADDRESS)
-#define I2C2_BASE		((I2C_RegDef_t *)I2C2_BASE_ADDRESS)
+#define I2C1_BASE		((volatile I2C_RegDef_t *)I2C1_BASE_ADDRESS)
+#define I2C2_BASE		((volatile I2C_RegDef_t *)I2C2_BASE_ADDRESS)
 
 /*
  * Bit position definitions for I2C_CR1

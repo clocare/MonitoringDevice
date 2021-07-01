@@ -18,6 +18,7 @@
 
 /* Task priorities. */
 #define Observer_PRIORITY							( tskIDLE_PRIORITY + 2 )
+#define SPO2_PRIORITY									( tskIDLE_PRIORITY + 3 )
 #define Reader_PRIORITY								( tskIDLE_PRIORITY + 2 )
 #define Display_PRIORITY							( tskIDLE_PRIORITY + 2 )
 #define GateWay_PRIORITY							( tskIDLE_PRIORITY + 3 )
@@ -25,6 +26,7 @@
 
 /* Task Stack Size */
 #define OBSERVER_TASK_STACK_SIZE			( configMINIMAL_STACK_SIZE + 1 )
+#define SPO2_TASK_STACK_SIZE					( configMINIMAL_STACK_SIZE + 1 )
 #define READER_TASK_STACK_SIZE				( configMINIMAL_STACK_SIZE + 1 )
 #define DISPLAY_TASK_STACK_SIZE				( configMINIMAL_STACK_SIZE + 2 )
 #define GATEWAY_TASK_STACK_SIZE				( configMINIMAL_STACK_SIZE + 0 )
@@ -42,5 +44,7 @@ void Display_mainTask(void * pvParameters);
 void GateWay_mainTask(void * pvParameters);
 
 void Emergency_mainTask(void * pvParameters);
+
+void SPO2_Algorithm_mainTask(void * pvParameters);
 
 #endif
