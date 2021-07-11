@@ -36,7 +36,7 @@ void UART_voidInit(void)
             } else if (user_configuration_t[i].baudrate == BPS_57600){
                 UARTx[i] -> BRR  = 0x8B;
             }else if (user_configuration_t[i].baudrate == BPS_115200){
-                UARTx[i] -> BRR  = 0x46;
+                UARTx[i] -> BRR  = 0x1A0;		// THIS VALUE is calculated for 6 * 8 MHZ clock
             }
 
             // Clear configuration bits 
@@ -89,7 +89,7 @@ uint8 UART_u8RecieveSync(UART_CH cpy_ch )
     uint16 local_timeout = 0;
     while (GET_BIT (UARTx[cpy_ch] -> SR , USART_SR_RXNE) == 0)
     {   
-        if(local_timeout++ > 10000){
+        if(local_timeout++ > 60000){
             local_RecievedData = 255; 
             break;
         }

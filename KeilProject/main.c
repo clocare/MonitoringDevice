@@ -172,7 +172,7 @@ void SPO2_Algorithm_mainTask(void * pvParameters)
 	bufferLength = 100; //buffer length of 100 stores 4 seconds of samples running at 25sps
 	
 	//TickType_t xLastWakeTime;
-	const TickType_t xFrequency =  portTICK_PERIOD_MS;
+	const TickType_t xFrequency = 1000 * portTICK_PERIOD_MS;
 
    // Initialise the xLastWakeTime variable with the current time.
    //  xLastWakeTime = xTaskGetTickCount();
@@ -186,8 +186,8 @@ void SPO2_Algorithm_mainTask(void * pvParameters)
 			redBuffer[i] = MAX30102_getRed();
 			irBuffer[i] = MAX30102_getIR();
 			MAX30102_nextSample(); //We're finished with this sample so move to next sample
-      vTaskDelay( xFrequency );
-			//taskYIELD()
+     // vTaskDelay( xFrequency );
+			taskYIELD()
 
 		}
 
@@ -195,13 +195,13 @@ void SPO2_Algorithm_mainTask(void * pvParameters)
 		maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
 		if ( (validHeartRate != 0) )
 		{
-			xQueueOverwrite(HRQueue , &heartRate );
+			xQueueSend(HRQueue , &heartRate, portMAX_DELAY );
 		}
 		if (validSPO2 != 0 )
 		{
-			xQueueOverwrite(Spo2Queue , &spo2 );
+			xQueueSend(Spo2Queue , &spo2 , portMAX_DELAY );
 		}
-	//	vTaskSuspend(Spo2Handle);
+
 		//Continuously taking samples from MAX30102.  Heart rate and SpO2 are calculated every 1 second
 		while (1)
 		{
@@ -213,6 +213,7 @@ void SPO2_Algorithm_mainTask(void * pvParameters)
 						redBuffer[i - 25] = redBuffer[i];
 						irBuffer[i - 25] = irBuffer[i];
 					}
+					taskENTER_CRITICAL();
 
 					//take 25 sets of samples before calculating the heart rate.
 					for ( i = 75; i < 100; i++)
@@ -221,24 +222,26 @@ void SPO2_Algorithm_mainTask(void * pvParameters)
 											MAX30102_check(); //Check the sensor for new data
 						redBuffer[i] = MAX30102_getRed();
 						irBuffer[i] = MAX30102_getIR();
-					//	vTaskDelay( xFrequency );
+						//vTaskDelay( xFrequency );
 
 					}
+					taskEXIT_CRITICAL();
+
 					//After gathering 25 new samples recalculate HR and SP02
 					maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer, &spo2, &validSPO2, &heartRate, &validHeartRate);
 					
 							if ( (validHeartRate != 0) )
 							{
-									xQueueOverwrite(HRQueue , &heartRate );
+									xQueueSend(HRQueue , &heartRate, portMAX_DELAY );
 							}
 							
 							if (validSPO2 != 0 )
 							{
-								xQueueOverwrite(Spo2Queue , &spo2 );
+									xQueueSend(Spo2Queue , &spo2, portMAX_DELAY );
 							}
+					
 					taskYIELD()
-				//	vTaskDelay( xFrequency );
-			//		vTaskSuspend(Spo2Handle);
+				  vTaskDelay( xFrequency );
 				}
 
 		else 							// Check if no card present
@@ -263,41 +266,66 @@ void Observer_mainTask(void * pvParameters)
 	ObserverReadingsType readings = {0};
 	volatile uint8 err = 0 ;
 	volatile uint8 err_counter = 0;
-	
+	uint8 emer_counter = 0 ;
+	const TickType_t xFrequency = 1000 * portTICK_PERIOD_MS;
+	sint32 heartRate_avgBuffer [AVG_BUFFER_LENGTH] = {0};
+	sint32 spo2_avgBuffer [AVG_BUFFER_LENGTH] = {0};
+	uint8 avg_buffer_idx = 0 ;
+	sint32 avg_buffer_sum = 0 ;
 	while(1)
 	{
 		if ((NotifiedVal & NEW_CARD_PRESENT_NOTIFICATION) == NEW_CARD_PRESENT_NOTIFICATION)
 		{
 
 			err = Observer_GetCurrentTemp(&readings);
-			if ( xQueueReceive (Spo2Queue , & (readings.SPO2) , 100 ) == pdFALSE  )
+			if ( xQueueReceive (Spo2Queue , & (readings.SPO2) , 5*xFrequency ) == pdFALSE  )
 			{
-				readings.SPO2 = 0;
 				err++;
 			}
 			else if ( (readings.SPO2 < SPO2_MIN ) || ( readings.SPO2 > SPO2_MAX ) )
 			{
-				readings.SPO2 = 0;
 				err++;
 			}
 			else 
 			{	
 				//ok
 			}
-			if (xQueueReceive (HRQueue , & (readings.HeartRate) , 100 ) == pdFALSE)
+			if (xQueueReceive (HRQueue , & (readings.HeartRate) , 5*xFrequency ) == pdFALSE)
 			{
-				readings.HeartRate = 0;
 				err++;
 			}
 			else if (readings.HeartRate < HEARTRATE_MIN ||readings.HeartRate > HEARTRATE_MAX )
 			{
-				readings.HeartRate = 0;
 				err++;
 			}
 			else 
 			{	
 				//ok
 			}
+			
+			// calculate avg readings 
+			if (avg_buffer_idx >= AVG_BUFFER_LENGTH) 
+				avg_buffer_idx = 0 ;
+
+			heartRate_avgBuffer[avg_buffer_idx] = readings.HeartRate;
+			spo2_avgBuffer[avg_buffer_idx] = readings.SPO2;
+
+			avg_buffer_idx++;
+			avg_buffer_sum = 0;
+
+			for(uint8 i=0 ; i<AVG_BUFFER_LENGTH ; i++)
+			{
+				avg_buffer_sum += heartRate_avgBuffer[i];
+			}
+			readings.HeartRate = (sint32)( avg_buffer_sum / AVG_BUFFER_LENGTH );
+			
+			avg_buffer_sum = 0;
+			for(uint8 i=0 ; i<AVG_BUFFER_LENGTH ; i++)
+			{
+				avg_buffer_sum += spo2_avgBuffer[i];
+			}
+			readings.SPO2 = (sint32)( avg_buffer_sum / AVG_BUFFER_LENGTH );
+			
 			xQueueOverwrite(xSensorsDataumQueue , &readings );
 			/* Check if values are in critical range while still in valid readings range */
 			if ( (readings.HeartRate <= HEARTRATE_CRITICAL_MIN && readings.HeartRate > HEARTRATE_MIN ) 
@@ -305,15 +333,21 @@ void Observer_mainTask(void * pvParameters)
 					|| ( readings.Temp >= TEMP_CRITICAL_MIN && readings.Temp < TEMP_MAX)
 				)
 			{
-				xTaskNotify(EmergencyHandle , EMERGENCY_MSG_NOTIFICATION , eSetValueWithOverwrite);
-				xTaskNotify(DisplayHandle  , EMERGENCY_MSG_NOTIFICATION  , eSetValueWithOverwrite );
-				vTaskDelay(10 * portTICK_PERIOD_MS); // to make sure notification is recieved.  
+				emer_counter++;
 			}
 			else 
 			{
 				// ok
+				emer_counter = 0;
 			}
 			
+			// check if critical values are read many times in a raw 
+			if (emer_counter > MAX_EMER_COUNTS)
+			{
+				xTaskNotify(EmergencyHandle , EMERGENCY_MSG_NOTIFICATION , eSetValueWithOverwrite);
+				xTaskNotify(DisplayHandle  , EMERGENCY_MSG_NOTIFICATION  , eSetValueWithOverwrite );
+				vTaskDelay(10 * portTICK_PERIOD_MS); // to make sure notification is recieved.  
+			}
 			/* check if all values are invalid */
 			if (err > 2)
 			{
@@ -348,7 +382,7 @@ void Observer_mainTask(void * pvParameters)
 				// Update display. 
 				xTaskNotify(DisplayHandle , CARD_IS_PRESENT_NOTIFICATION  , eSetValueWithOverwrite );
 			}
-			vTaskDelay(200 * portTICK_PERIOD_MS);		// Wait before new reading collection
+			vTaskDelay(xFrequency);		// Wait before new reading collection
 		}
 
 		else 
@@ -458,6 +492,7 @@ void GateWay_mainTask(void * pvParameters)
 	ObserverReadingsType reading; 
 	loginData_Type login ; 
 	boolean status = 0 ;
+	uint8 timeout = 0 ;
 	while(1)
 	{
 		xTaskNotifyWait( 0xffffffff  , 0x00  , &NotifiedVal   , portMAX_DELAY);
@@ -465,12 +500,13 @@ void GateWay_mainTask(void * pvParameters)
 		{
 			xQueuePeek(xCardIdQueue ,&login , portMAX_DELAY);
 			status = 0; 
-			while (status == 0)
+			timeout = 0;
+			while ( (status == 0)  || (timeout < 255) )
 			{
 				// Keep try to log in 
 				status = GateWay_WriteLoginData(login);
 				vTaskDelay(100 * portTICK_PERIOD_MS);		// Wait before sending again
-
+				timeout++;
 			}
 		}
 		else if ( (NotifiedVal & CARD_IS_PRESENT_NOTIFICATION) == CARD_IS_PRESENT_NOTIFICATION)

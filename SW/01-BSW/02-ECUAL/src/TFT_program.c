@@ -19,6 +19,7 @@
 #include "TFT_private.h"
 #include "TFT_config.h"
 
+#define TIMER_MUL				6
 
 void TFT_voidInit(void)
 {
@@ -27,21 +28,21 @@ void TFT_voidInit(void)
 
     /** Rest Pulse **/
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 1);
-    TIMER_voidSetBusyWait(TIM3 ,100);
+    TIMER_voidSetBusyWait(TIM3 ,TIMER_MUL*100);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 0);
-    TIMER_voidSetBusyWait(TIM3 ,20);
+    TIMER_voidSetBusyWait(TIM3 ,TIMER_MUL*20);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 1);
-    TIMER_voidSetBusyWait(TIM3 ,100);
+    TIMER_voidSetBusyWait(TIM3 ,TIMER_MUL*100);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 0);
-    TIMER_voidSetBusyWait(TIM3 ,100);
+    TIMER_voidSetBusyWait(TIM3 ,TIMER_MUL*100);
     GPIO_voidSetPortPinValue(TFT_RST_PORT , TFT_RST_PIN , 1);
-    TIMER_voidSetBusyWait(TIM3 ,120000);
+    TIMER_voidSetBusyWait(TIM3 ,TIMER_MUL*120000);
     /*************************/
 
     // Sleep out CMD
     TFT_voidWriteCommand(TFT_CMD_SLPOUT);
     // Wait for 150 ms (Halt)
-    TIMER_voidSetBusyWait(TIM3 ,150000);
+    TIMER_voidSetBusyWait(TIM3 ,TIMER_MUL*150000);
     // Color MODE CMD
     TFT_voidWriteCommand(TFT_CMD_COLORMODE);
     // Color Mode: RGB 565 = 0x05 

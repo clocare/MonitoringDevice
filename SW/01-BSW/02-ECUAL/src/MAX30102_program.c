@@ -15,6 +15,7 @@
 #include "MAX30102_config.h"
 #include "MAX30102_private.h"
 
+#define TIMER_MUL				6
 #define MAX_BUFFER		260		// will read at most 32 bytes at a time.
 static uint8 activeLEDs;
 sense_struct sense;
@@ -210,7 +211,7 @@ float MAX30102_readTemperature() {
 		uint8 response = MAX30102_u8ReadRegister( MAX30102_INT_STAT2);
 		if ((response & MAX30102_INT_DIE_TEMP_RDY_ENABLE) > 0)
 			break; //We're done!
-		TIMER_voidSetBusyWait(TIM3,1000); //Let's not over burden the I2C bus 1ms delay
+		TIMER_voidSetBusyWait(TIM3,TIMER_MUL*1000); //Let's not over burden the I2C bus 1ms delay
 		startTime++;
 	}
 	//TODO How do we want to fail? With what type of error?
@@ -389,7 +390,7 @@ boolean MAX30102_safeCheck(uint8 maxTimeToCheck)
 		if(MAX30102_check()>0) //We found new data!
 			return(TRUE);
 
-		TIMER_voidSetBusyWait(TIM3,1000);
+		TIMER_voidSetBusyWait(TIM3,TIMER_MUL*1000);
 		markTime++;
 	}
 }

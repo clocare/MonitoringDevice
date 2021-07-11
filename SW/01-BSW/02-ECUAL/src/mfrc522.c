@@ -21,6 +21,9 @@
 // #define GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_LOW);	GPIO_ResetBits(GPIOA, GPIO_Pin_4);
 // #define GPIO_voidSetPortPinValue(mfrc522_CS_PORT , mfrc522_CS_PIN , STD_HIGH);	GPIO_SetBits(GPIOA, GPIO_Pin_4);
 #undef mfrc522_DumpToSerial
+
+#define TIMER_MUL				6
+
 /* Private variables ---------------------------------------------------------*/
 static Uid uid;
 /* Private function prototypes -----------------------------------------------*/
@@ -235,7 +238,7 @@ void PCD_Reset(void) {
 	// The datasheet does not mention how long the SoftRest command takes to complete.
 	// But the MFRC522 might have been in soft power-down mode (triggered by bit 4 of CommandReg)
 	// Section 8.8.2 in the datasheet says the oscillator start-up time is the start up time of the crystal + 37,74µs. Let us be generous: 50ms.
-	TIMER_voidSetBusyWait(TIM3 ,50000);
+	TIMER_voidSetBusyWait(TIM3 ,TIMER_MUL*50000);
 //	DWT_Delay_ms(50);
 	// Wait for the PowerDown bit in CommandReg to be cleared
 	while (PCD_ReadRegister(CommandReg) & (1<<4)) {

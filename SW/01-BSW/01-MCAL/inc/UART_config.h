@@ -7,7 +7,7 @@
 #ifndef UART_CONFIG_H
 #define UART_CONFIG_H
 
-#define CLK_HZ        8000000
+#define CLK_HZ       ( 8000000 * 6 )
 
 typedef enum {
     BPS_4800,           

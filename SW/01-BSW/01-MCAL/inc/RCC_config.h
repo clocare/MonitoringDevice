@@ -26,7 +26,7 @@
 // Clock Source: HSI - HSE_RC - HSE_XTAL 
 #define CLOCK_SRC               HSE_XTAL
 // Clock PLL: 1:Enable   -   0:Disable
-#define CLOCK_PLL              	0
+#define CLOCK_PLL              	1
 
 #if CLOCK_SRC == HSI
     /*
@@ -75,7 +75,7 @@
 	RCC_APB1_PRESCALAR_DIV_4	
 	RCC_APB1_PRESCALAR_DIV_8	
 	RCC_APB1_PRESCALAR_DIV_16 						*/
-#define RCC_APB1_PRESCALAR_DIV 	RCC_APB1_PRESCALAR_DIV_NO
+#define RCC_APB1_PRESCALAR_DIV 	RCC_APB1_PRESCALAR_DIV_2
 
 /* Available options for APB2 Clock prescalar are:-
 	RCC_APB2_PRESCALAR_DIV_NO

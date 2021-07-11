@@ -8,9 +8,9 @@
 #ifndef I2C_CONFIG_H_
 #define I2C_CONFIG_H_
 
-#define SYSTEM_CLK_MHZ		8
+#define SYSTEM_CLK_MHZ		48
 #define AHB_PRE						1
-#define APB1_PRE					1
+#define APB1_PRE					2
 
 /* Configuring I2C1 */
 #define I2C1_ACKControl  	I2C_ACK_ENABLE
