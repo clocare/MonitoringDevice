@@ -7,19 +7,19 @@
 #ifndef     OBSERVER_H
 #define     OBSERVER_H
 
-#define TEMP_MIN							33U
+#define TEMP_MIN							34U
 #define TEMP_MAX							50U
 #define TEMP_CRITICAL_MIN			39U
 
-#define HEARTRATE_MIN						60U
-#define HEARTRATE_MAX						120U
+#define HEARTRATE_MIN						40U
+#define HEARTRATE_MAX						250U
 #define HEARTRATE_CRITICAL_MIN	60U
 
-#define SPO2_MIN								80U
-#define SPO2_MAX								101U
+#define SPO2_MIN								60U
+#define SPO2_MAX								120U
 #define SPO2_CRITICAL_MIN				90U
 
-#define MAX_ERROR_COUNT						5
+#define MAX_ERROR_COUNT						10
 typedef struct ObserverReadingsType
 {
 	float32 Temp;

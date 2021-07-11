@@ -28,9 +28,9 @@ float32 TempSensor_f32TempRead(void);
 /******************************************************************************
 * Description : calculating the sensor's reading average
 * Parameters  : void
-* Return type : average reading (u8)
+* Return type : average reading (uint8)
 ******************************************************************************/
-// u8 TempSensor_u8CalcAvg(void);
+// uint8 TempSensor_u8CalcAvg(void);
 
 
 #endif 

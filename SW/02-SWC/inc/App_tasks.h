@@ -18,16 +18,16 @@
 
 /* Task priorities. */
 #define Observer_PRIORITY							( tskIDLE_PRIORITY + 2 )
-#define SPO2_PRIORITY									( tskIDLE_PRIORITY + 3 )
+#define SPO2_PRIORITY									( tskIDLE_PRIORITY + 2 )
 #define Reader_PRIORITY								( tskIDLE_PRIORITY + 2 )
 #define Display_PRIORITY							( tskIDLE_PRIORITY + 2 )
-#define GateWay_PRIORITY							( tskIDLE_PRIORITY + 3 )
+#define GateWay_PRIORITY							( tskIDLE_PRIORITY + 2 )
 #define Emergency_PRIORITY						( tskIDLE_PRIORITY + 2 )
 
 /* Task Stack Size */
-#define OBSERVER_TASK_STACK_SIZE			( configMINIMAL_STACK_SIZE + 1 )
-#define SPO2_TASK_STACK_SIZE					( configMINIMAL_STACK_SIZE + 1 )
-#define READER_TASK_STACK_SIZE				( configMINIMAL_STACK_SIZE + 1 )
+#define OBSERVER_TASK_STACK_SIZE			( configMINIMAL_STACK_SIZE + 100 )
+#define SPO2_TASK_STACK_SIZE					( configMINIMAL_STACK_SIZE + 150 )
+#define READER_TASK_STACK_SIZE				( configMINIMAL_STACK_SIZE + 10 )
 #define DISPLAY_TASK_STACK_SIZE				( configMINIMAL_STACK_SIZE + 2 )
 #define GATEWAY_TASK_STACK_SIZE				( configMINIMAL_STACK_SIZE + 0 )
 #define EMERGENCY_TASK_STACK_SIZE			( configMINIMAL_STACK_SIZE + 0 )
